@@ -6,6 +6,8 @@ import { AgentLlmModule } from './agent-llm/agent-llm.module';
 import { AgentToolsModule } from './agent-tools/agent-tools.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthGuard } from './common/auth.guard';
+import { ChatModule } from './chat/chat.module';
+import { FeedModule } from './feed/feed.module';
 import { APP_CONFIG, AppConfig } from './config/config';
 import { CommonModule } from './common/common.module';
 import { EmbeddingsModule } from './embeddings/embeddings.module';
@@ -48,6 +50,8 @@ import { VerificationModule } from './verification/verification.module';
     NegotiationModule,
     AgentLlmModule,
     InterviewModule,
+    FeedModule,
+    ChatModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],

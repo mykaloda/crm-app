@@ -76,3 +76,36 @@ export function fullProfile(overrides: Record<string, Record<string, unknown>> =
   for (const [k, v] of Object.entries(overrides)) (base as Record<string, Record<string, unknown>>)[k] = { ...(base as Record<string, Record<string, unknown>>)[k], ...v };
   return base;
 }
+
+let pairCity = 0;
+/**
+ * Two compatible users (built-in agents) placed in their own "city", negotiated to AGENT_MATCHED.
+ * Extra users can be added to the same city via `extra`.
+ */
+export async function agentMatchedPair(app: INestApplication, opts: { extra?: number } = {}) {
+  const { MatchingService } = await import('../src/matching/matching.service');
+  const { NegotiationService } = await import('../src/negotiation/negotiation.service');
+  const { BuiltinAgentService } = await import('../src/negotiation/builtin-agent.service');
+  const lng = -150 + pairCity++ * 3;
+  const a = await registerUser(app);
+  await onboardUser(app, a);
+  await authed(app, a).put('/profile').send(fullProfile({ basic: { displayName: 'Alice', gender: 'woman', seeking: ['man'], lat: -20, lng } })).expect(200);
+  const others: TestUser[] = [];
+  for (let i = 0; i < 1 + (opts.extra ?? 0); i++) {
+    const b = await registerUser(app);
+    await onboardUser(app, b);
+    await authed(app, b)
+      .put('/profile')
+      .send(fullProfile({ basic: { displayName: `Bob${i}`, gender: 'man', seeking: ['woman'], birthDate: '1989-02-02', lat: -20.02 - i * 0.01, lng } }))
+      .expect(200);
+    others.push(b);
+  }
+  const matches = await app.get(MatchingService).runForUser(a.id);
+  const negotiations = app.get(NegotiationService);
+  const builtin = app.get(BuiltinAgentService);
+  for (const m of matches) {
+    await negotiations.start(m.id, a.id);
+    await builtin.runToCompletion(m.id);
+  }
+  return { a, b: others[0], others, matchIds: matches.map((m) => m.id) };
+}
