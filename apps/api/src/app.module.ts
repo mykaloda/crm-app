@@ -2,6 +2,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AccountModule } from './account/account.module';
+import { AdminModule } from './admin/admin.module';
+import { BillingModule } from './billing/billing.module';
 import { AgentLlmModule } from './agent-llm/agent-llm.module';
 import { AgentToolsModule } from './agent-tools/agent-tools.module';
 import { AuthModule } from './auth/auth.module';
@@ -16,7 +18,9 @@ import { InterviewModule } from './interview/interview.module';
 import { MatchingModule } from './matching/matching.module';
 import { NegotiationModule } from './negotiation/negotiation.module';
 import { OAuthModule } from './oauth/oauth.module';
+import { PrivacyModule } from './privacy/privacy.module';
 import { ProfileModule } from './profile/profile.module';
+import { SafetyModule } from './safety/safety.module';
 import { VerificationModule } from './verification/verification.module';
 
 @Module({
@@ -52,6 +56,10 @@ import { VerificationModule } from './verification/verification.module';
     InterviewModule,
     FeedModule,
     ChatModule,
+    SafetyModule,
+    PrivacyModule,
+    AdminModule,
+    BillingModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }],

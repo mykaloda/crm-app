@@ -152,6 +152,10 @@ export class MatchingService {
     if (!match) throw new NotFoundException('Candidate not found');
     const side = sideOf(match, userId);
     const otherId = side === 'A' ? match.userBId : match.userAId;
+    const blocked = await this.prisma.block.count({
+      where: { OR: [{ blockerId: userId, blockedId: otherId }, { blockerId: otherId, blockedId: userId }] },
+    });
+    if (blocked) throw new NotFoundException('Candidate not found');
     const [row, mine] = await Promise.all([
       this.prisma.profile.findUnique({ where: { userId: otherId } }),
       this.prisma.profile.findUnique({ where: { userId }, select: { lat: true, lng: true } }),
