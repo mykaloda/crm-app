@@ -1,0 +1,15 @@
+{
+  "name": "AgentMatch",
+  "short_name": "AgentMatch",
+  "description": "Dating where your AI agent finds and vets matches for you.",
+  "start_url": "/matches",
+  "display": "standalone",
+  "background_color": "#faf8fb",
+  "theme_color": "#d42a55",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

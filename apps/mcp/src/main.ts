@@ -1,4 +1,13 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { createMcpApp } from './app';
+
+for (const f of [resolve(process.cwd(), '.env'), resolve(process.cwd(), '../../.env')]) {
+  if (existsSync(f)) {
+    process.loadEnvFile(f);
+    break;
+  }
+}
 
 const env = process.env;
 const port = Number(env.PORT_MCP ?? 4100);

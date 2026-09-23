@@ -1,4 +1,4 @@
-import { ProfileData, wordCount } from '@agentmatch/shared';
+import { ProfileData, ageFromBirthDate, wordCount } from '@agentmatch/shared';
 
 /** Deterministic PRNG so seeds and tests are reproducible. */
 export function mulberry32(seed: number) {
@@ -196,7 +196,7 @@ export function generatePeople(n: number, seed = 42, emailDomain = 'seed.agentma
     };
     const job = pick(r, JOBS);
     data.description = {
-      aiDescription: describe(r, { name: data.basic!.displayName!, gender, age, city: c.city, job, primary, secondary, data }),
+      aiDescription: describe(r, { name: data.basic!.displayName!, gender, age: ageFromBirthDate(birthDate), city: c.city, job, primary, secondary, data }),
     };
     people.push({
       email: `person${String(i + 1).padStart(3, '0')}@${emailDomain}`,

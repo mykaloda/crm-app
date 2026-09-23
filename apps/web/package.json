@@ -1,0 +1,58 @@
+{
+  "name": "@agentmatch/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@agentmatch/shared": "workspace:*",
+    "next": "15.5.26",
+    "react": "19.1.9",
+    "react-dom": "19.1.9",
+    "socket.io-client": "^4.8.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@swc/core": "^1.13.0",
+    "@swc/jest": "^0.2.39",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "jest": "^30.0.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "5.9.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {
+      "^.+\\.tsx?$": [
+        "@swc/jest",
+        {
+          "jsc": {
+            "transform": {
+              "react": {
+                "runtime": "automatic"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "testMatch": [
+      "<rootDir>/src/**/*.spec.ts"
+    ],
+    "moduleNameMapper": {
+      "^@agentmatch/shared$": "<rootDir>/../../packages/shared/src",
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
+  }
+}

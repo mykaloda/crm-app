@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import 'reflect-metadata';
+import { loadDotEnv } from '../load-env';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { PrismaService } from '../common/prisma.service';
@@ -12,6 +13,7 @@ import { generatePeople } from './synthetic';
  * Creates 200 synthetic profiles plus demo@agentmatch.local and admin@agentmatch.local.
  */
 async function main() {
+  loadDotEnv();
   process.env.MATCHING_ENABLE_SCHEDULER = 'false';
   const args = process.argv.slice(2);
   const count = Number(args[args.indexOf('--count') + 1]) || 200;
