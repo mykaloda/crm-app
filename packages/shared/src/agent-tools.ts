@@ -42,7 +42,7 @@ export const AGENT_TOOLS = {
     description:
       'Proposes changes to your user\'s profile. Changes are saved as a DRAFT and only take effect after the human ' +
       'approves them on the website. Send only the fields you learned from the user; never invent answers. ' +
-      'aiDescription must be 150-300 words, third person, with no contact details, surname or exact location.',
+      'aiDescription must be 150-300 words, third person using pronouns (not the name), with no contact details or exact location.',
     input: z.object({
       changes: profilePatchSchema,
       note: z.string().max(500).optional().describe('Short note for the human explaining the changes'),

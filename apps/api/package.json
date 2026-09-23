@@ -12,7 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "node -r @swc-node/register src/seed/seed.ts"
   },
   "dependencies": {
     "@agentmatch/shared": "workspace:*",
@@ -42,6 +42,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/testing": "^11.1.0",
+    "@swc-node/register": "^1.12.1",
     "@swc/core": "^1.13.0",
     "@swc/jest": "^0.2.39",
     "@types/cookie-parser": "^1.4.9",

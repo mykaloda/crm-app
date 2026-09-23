@@ -199,7 +199,7 @@ const HINTS: Record<string, string> = {
   excludeAlcohol: 'Partner drinking levels that are unacceptable',
   excludePets: 'Partner pet situations that are unacceptable',
   noPartnerChildren: 'True if a partner with children is unacceptable',
-  aiDescription: 'Warm third-person description, 150-300 words, no contact details or full name',
+  aiDescription: 'Warm third-person description, 150-300 words; use pronouns, not the name; no contact details or exact location',
 };
 
 const SENSITIVE = new Set(['faith', 'politics', 'faithImportance', 'politicsImportance']);
