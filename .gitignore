@@ -10,3 +10,4 @@ coverage
 apps/web/next-env.d.ts
 .DS_Store
 uploads/
+dump.rdb
