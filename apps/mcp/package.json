@@ -1,0 +1,43 @@
+{
+  "name": "@agentmatch/mcp",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "jest",
+    "test:e2e": "echo 'MCP e2e tests run from apps/api (test/mcp.e2e-spec.ts)'"
+  },
+  "dependencies": {
+    "@agentmatch/shared": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "cors": "^2.8.6",
+    "express": "^5.1.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.13.0",
+    "@swc/jest": "^0.2.39",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "5.9.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {
+      "^.+\\.ts$": "@swc/jest"
+    },
+    "testMatch": [
+      "<rootDir>/src/**/*.spec.ts"
+    ],
+    "moduleNameMapper": {
+      "^@agentmatch/shared$": "<rootDir>/../../packages/shared/src"
+    }
+  }
+}

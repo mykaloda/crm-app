@@ -29,13 +29,13 @@ describe('Auth, onboarding and profile (e2e)', () => {
       await request(server).post('/auth/login').send({ email: 'ann@test.local', password: 'wrong-password' }).expect(401);
       const ok = await request(server).post('/auth/login').send({ email: 'ann@test.local', password: 'correct-horse-9' }).expect(200);
       expect(ok.body.accessToken).toBeTruthy();
-      expect(ok.headers['set-cookie'].join(';')).toMatch(/am_access=.*HttpOnly/);
+      expect(([] as string[]).concat(ok.headers['set-cookie']).join(';')).toMatch(/am_access=.*HttpOnly/);
     });
 
     it('rotates refresh tokens and detects reuse', async () => {
       const agent = request.agent(app.getHttpServer());
       const reg = await agent.post('/auth/register').send({ email: 'rot@test.local', password: 'correct-horse-9' }).expect(201);
-      const cookie = reg.headers['set-cookie'].find((c: string) => c.startsWith('am_refresh='))!;
+      const cookie = ([] as string[]).concat(reg.headers['set-cookie']).find((c: string) => c.startsWith('am_refresh='))!;
       const oldRefresh = cookie.split(';')[0].split('=')[1];
       await agent.post('/auth/refresh').expect(200);
       // Replaying the old token revokes the whole family.
