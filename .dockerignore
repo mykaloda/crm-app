@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+**/.next
+**/.env
+**/test-results
+**/e2e/screens
+uploads
+.git

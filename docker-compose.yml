@@ -30,6 +30,8 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agentmatch
       REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /data/uploads
+    volumes: [uploads:/data/uploads]
     ports: ["4000:4000"]
     depends_on:
       postgres: { condition: service_healthy }
@@ -44,7 +46,12 @@ services:
     depends_on: [api]
 
   web:
-    build: { context: ., dockerfile: apps/web/Dockerfile }
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_MCP_URL: ${NEXT_PUBLIC_MCP_URL:-http://localhost:4100}
     env_file: .env
     ports: ["3000:3000"]
     depends_on: [api]
@@ -52,3 +59,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  uploads:
