@@ -75,6 +75,7 @@ export class AgentToolsService {
       const user = await this.prisma.user.findUniqueOrThrow({ where: { id: ctx.userId } });
       if (!user.aiEnabled) throw new ForbiddenException({ error: 'ai_disabled', message: 'The user has turned off AI access' });
       if (user.ageVerificationStatus !== 'VERIFIED') throw new ForbiddenException({ error: 'age_verification_required' });
+      if (!(await this.consents.has(ctx.userId, 'AI_PROCESSING'))) throw new ForbiddenException({ error: 'ai_consent_required' });
       await this.rateLimit.consume(`agent:${ctx.userId}`, TOOL_CALLS_PER_HOUR, 3600, 'agent tool calls');
       const result = await this.run(ctx, tool, parsed.data as never);
       await this.log(ctx, tool, parsed.data, 'ok', undefined, summarize(result));

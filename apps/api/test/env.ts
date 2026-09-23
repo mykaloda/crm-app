@@ -15,3 +15,4 @@ process.env.MATCHING_ENABLE_SCHEDULER = 'false';
 process.env.UPLOAD_DIR = '/tmp/agentmatch-test-uploads';
 process.env.ADMIN_EMAILS = 'admin@test.local';
 process.env.GPT_OAUTH_CLIENT_SECRET = 'gpt-secret';
+process.env.NEGOTIATION_AUTORUN = process.env.NEGOTIATION_AUTORUN ?? 'false';

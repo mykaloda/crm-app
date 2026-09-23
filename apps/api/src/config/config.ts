@@ -24,7 +24,7 @@ const envSchema = z.object({
   OPENAI_EMBEDDING_MODEL: z.string().default('text-embedding-3-small'),
   AGENT_LLM_PROVIDER: z.enum(['scripted', 'anthropic']).default('scripted'),
   ANTHROPIC_API_KEY: z.string().optional(),
-  ANTHROPIC_MODEL: z.string().default('claude-sonnet-5'),
+  ANTHROPIC_MODEL: z.string().default('claude-opus-5'),
 
   AGE_VERIFICATION_PROVIDER: z.enum(['mock', 'veriff', 'persona']).default('mock'),
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -46,6 +46,13 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v !== 'false'),
   NEGOTIATION_MAX_MESSAGES: z.coerce.number().int().default(10),
+  /** Built-in agents take turns automatically through the queue. */
+  NEGOTIATION_AUTORUN: z
+    .string()
+    .optional()
+    .transform((v) => v !== 'false'),
+  /** How long to wait for a user's own external AI before the built-in agent answers for them. */
+  NEGOTIATION_EXTERNAL_GRACE_HOURS: z.coerce.number().default(24),
   RATE_LIMIT_SEARCH_PER_HOUR: z.coerce.number().int().default(30),
   RATE_LIMIT_AGENT_MESSAGES_PER_HOUR: z.coerce.number().int().default(120),
   ADMIN_EMAILS: z

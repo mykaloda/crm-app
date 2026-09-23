@@ -203,6 +203,8 @@ export class OAuthService {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     if (user.ageVerificationStatus !== 'VERIFIED') throw new ForbiddenException({ error: 'age_verification_required' });
     if (!user.aiEnabled) throw new ForbiddenException({ error: 'ai_disabled', message: 'Turn AI access back on in privacy settings first' });
+    const aiConsent = await this.prisma.consent.count({ where: { userId, type: 'AI_PROCESSING', revokedAt: null } });
+    if (!aiConsent) throw new ForbiddenException({ error: 'ai_consent_required', message: 'Consent to AI processing first' });
     const code = this.crypto.randomToken(32);
     await this.prisma.oAuthAuthCode.create({
       data: {

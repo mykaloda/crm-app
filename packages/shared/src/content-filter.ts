@@ -22,6 +22,11 @@ const RULES: { category: FilterCategory; re: RegExp }[] = [
     category: 'contact',
     re: /\b(share|send|give|exchange|ask\s+for|what'?s|provide)\b.{0,40}\b(phone|number|whats\s?app|telegram|signal|insta(gram)?|snap(chat)?|e-?mail|contacts?|handle|socials?|last\s+name|surname|full\s+name)\b/i,
   },
+  {
+    category: 'contact',
+    re: /\b(her|his|their|your|my)\s+(cell\s*|mobile\s*|phone\s*)?(phone|number|e-?mail|insta\w*|telegram|whats\s?app|snap\w*|socials?|handle|last\s+name|surname|full\s+name|home\s+address|address)\b/i,
+  },
+  { category: 'contact', re: /\b(what\s+is|tell\s+me|can\s+i\s+(get|have))\b.{0,30}\b(phone|e-?mail|contact|handle|surname|last\s+name)\b/i },
   { category: 'contact', re: /(^|\s)@[a-z0-9_.]{3,}/i },
   // address / exact location
   {
