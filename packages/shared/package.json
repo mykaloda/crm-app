@@ -1,0 +1,28 @@
+{
+  "name": "@agentmatch/shared",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "jest"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.13.0",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.0.0",
+    "typescript": "5.9.3"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": { "^.+\\.ts$": "@swc/jest" },
+    "testMatch": ["<rootDir>/src/**/*.spec.ts"]
+  }
+}
