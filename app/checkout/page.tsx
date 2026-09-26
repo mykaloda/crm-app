@@ -26,16 +26,16 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   let blocked: string | null = null;
 
   if (sp.auction) {
-    const a = getAuction(Number(sp.auction));
+    const a = await getAuction(Number(sp.auction));
     if (!a) notFound();
-    const top = topBid(a.id);
+    const top = await topBid(a.id);
     moment = a.moment;
     auctionId = a.id;
     amount = top?.amount_cents ?? a.start_cents;
     if (!user) blocked = t.auction.login;
     else if (a.status !== "awaiting_payment" || top?.user_id !== user.id) blocked = t.auction.errors.closed;
   } else {
-    moment = currentMomentOfSeries(sp.moment ?? "");
+    moment = (await currentMomentOfSeries(sp.moment ?? ""));
     if (!moment) notFound();
     amount = moment.price_cents;
     const status = availability(moment);

@@ -1,9 +1,9 @@
 import { all } from "@/lib/db";
 import { saveFaq, saveReview } from "../../actions";
 
-export default function ContentAdmin() {
-  const faq = all<{ id: number; q_en: string; a_en: string; q_ru: string; a_ru: string; sort: number }>("SELECT * FROM faq ORDER BY sort, id");
-  const reviews = all<{ id: number; author: string; text_en: string; text_ru: string; visible: number }>(
+export default async function ContentAdmin() {
+  const faq = await all<{ id: number; q_en: string; a_en: string; q_ru: string; a_ru: string; sort: number }>("SELECT * FROM faq ORDER BY sort, id");
+  const reviews = await all<{ id: number; author: string; text_en: string; text_ru: string; visible: number }>(
     "SELECT * FROM reviews ORDER BY created_at DESC",
   );
   return (

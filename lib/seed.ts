@@ -1,8 +1,8 @@
-import type { DatabaseSync } from "node:sqlite";
+import { insert, run } from "./db";
 import { openNextMoment } from "./moments";
 
 /** Initial catalog from the spec (section 3). Runs once on an empty database. */
-export function seed(conn: DatabaseSync) {
+export async function seed() {
   const now = Date.now();
 
   const cities: [string, string, string, string, string, string, number, number, string][] = [
@@ -15,10 +15,9 @@ export function seed(conn: DatabaseSync) {
     ["bali", "Bali", "Бали", "in Bali", "на Бали", "ID", -8.6705, 115.2126, "Asia/Makassar"],
     ["iceland", "Iceland", "Исландия", "over Iceland", "над Исландией", "IS", 64.1466, -21.9426, "Atlantic/Reykjavik"],
   ];
-  const insCity = conn.prepare(
-    "INSERT INTO cities(slug, name_en, name_ru, in_en, in_ru, country, lat, lon, tz) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-  );
-  for (const c of cities) insCity.run(...c);
+  for (const c of cities) {
+    await run("INSERT INTO cities(slug, name_en, name_ru, in_en, in_ru, country, lat, lon, tz) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", ...c);
+  }
 
   const types = [
     {
@@ -78,16 +77,16 @@ export function seed(conn: DatabaseSync) {
       start_text_ru: "{recipient}, {in} начался пик метеоритного дождя. Посмотрите на небо.",
     },
   ];
-  const insType = conn.prepare(`INSERT INTO event_types(slug, kind, threshold, recurrence, season_start, window_start,
+  const insType = `INSERT INTO event_types(slug, kind, threshold, recurrence, season_start, window_start,
     window_end, name_en, name_ru, title_en, title_ru, rule_en, rule_ru, start_text_en, start_text_ru, sort)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-  types.forEach((t, i) =>
-    insType.run(
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  for (const [i, t] of types.entries()) {
+    await run(insType,
       t.slug, t.kind, t.threshold, t.recurrence, t.season_start ?? null, t.window_start ?? null,
       t.window_end ?? null, t.name_en, t.name_ru, t.title_en, t.title_ru, t.rule_en, t.rule_ru,
       t.start_text_en, t.start_text_ru, i,
-    ),
-  );
+    );
+  }
 
   const offerings: [string, string, number, "fixed" | "auction"][] = [
     ["next-rain", "paris", 5000, "fixed"],
@@ -105,16 +104,17 @@ export function seed(conn: DatabaseSync) {
     ["first-sunrise", "bali", 100000, "fixed"],
     ["meteor-shower", "iceland", 50000, "auction"],
   ];
-  const insOffering = conn.prepare(`INSERT INTO offerings(slug, city_id, event_type_id, price_cents, sale_type)
-    SELECT ?, c.id, t.id, ?, ? FROM cities c, event_types t WHERE c.slug = ? AND t.slug = ?`);
   for (const [type, city, price, sale] of offerings) {
-    const res = insOffering.run(`${type}-${city}`, price, sale, city, type);
-    const offeringId = Number(res.lastInsertRowid);
+    const offeringId = await insert(
+      `INSERT INTO offerings(slug, city_id, event_type_id, price_cents, sale_type)
+       SELECT ?::text, c.id, t.id, ?::bigint, ?::text FROM cities c, event_types t WHERE c.slug = ? AND t.slug = ?`,
+      `${type}-${city}`, price, sale, city, type,
+    );
     if (type === "meteor-shower") {
       // Geminids peak night over Iceland; later showers are entered by the admin.
-      openNextMoment(offeringId, now, { start: Date.UTC(2026, 11, 13, 20), end: Date.UTC(2026, 11, 14, 6) });
+      await openNextMoment(offeringId, now, { start: Date.UTC(2026, 11, 13, 20), end: Date.UTC(2026, 11, 14, 6) });
     } else {
-      openNextMoment(offeringId, now);
+      await openNextMoment(offeringId, now);
     }
   }
 
@@ -156,6 +156,7 @@ export function seed(conn: DatabaseSync) {
       "Нет. Можно оплатить как гость; кабинет создается автоматически по вашему email, чтобы вы могли управлять заказом. Регистрация нужна только для аукционов.",
     ],
   ];
-  const insFaq = conn.prepare("INSERT INTO faq(q_en, a_en, q_ru, a_ru, sort) VALUES (?, ?, ?, ?, ?)");
-  faq.forEach((f, i) => insFaq.run(...f, i));
+  for (const [i, f] of faq.entries()) {
+    await run("INSERT INTO faq(q_en, a_en, q_ru, a_ru, sort) VALUES (?, ?, ?, ?, ?)", ...f, i);
+  }
 }

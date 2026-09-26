@@ -78,10 +78,10 @@ export async function tick(now = Date.now(), opts: { force?: boolean } = {}): Pr
   if (running) return { ...report, skipped: true };
   running = true;
   try {
-    report.scheduledSends = processScheduledSends(now);
+    report.scheduledSends = (await processScheduledSends(now));
     await monitorEvents(now, report, opts.force ?? false);
-    processAuctions(now);
-    cancelStalePending(now);
+    await processAuctions(now);
+    await cancelStalePending(now);
   } finally {
     running = false;
   }
@@ -90,11 +90,11 @@ export async function tick(now = Date.now(), opts: { force?: boolean } = {}): Pr
 }
 
 async function monitorEvents(now: number, report: TickReport, force: boolean) {
-  const moments = monitoredMoments(now);
+  const moments = await monitoredMoments(now);
   const weatherMoments = new Map<number, MomentView[]>();
 
   for (const m of moments) {
-    if (m.type.kind === "sunrise" || m.type.kind === "meteor") handleAstronomical(m, now, report);
+    if (m.type.kind === "sunrise" || m.type.kind === "meteor") await handleAstronomical(m, now, report);
     else {
       const list = weatherMoments.get(m.city_id) ?? [];
       list.push(m);
@@ -114,20 +114,20 @@ async function monitorEvents(now: number, report: TickReport, force: boolean) {
 async function pollCity(city: City, now: number, report: TickReport): Promise<CityReadings | null> {
   try {
     const primary = await withRetry(() => primaryProvider().current(city));
-    run("UPDATE cities SET fail_count = 0, last_poll_at = ? WHERE id = ?", now, city.id);
+    await run("UPDATE cities SET fail_count = 0, last_poll_at = ? WHERE id = ?", now, city.id);
     rememberReading(city, primary);
     report.polled.push(city.slug);
     return { primary };
   } catch (e) {
-    const fails = (one<{ n: number }>("SELECT fail_count AS n FROM cities WHERE id = ?", city.id)?.n ?? 0) + 1;
-    run("UPDATE cities SET fail_count = ?, last_poll_at = ? WHERE id = ?", fails, now, city.id);
+    const fails = ((await one<{ n: number }>("SELECT fail_count AS n FROM cities WHERE id = ?", city.id))?.n ?? 0) + 1;
+    await run("UPDATE cities SET fail_count = ?, last_poll_at = ? WHERE id = ?", fails, now, city.id);
     report.failed.push(city.slug);
-    run(
+    await run(
       `INSERT INTO measurements(city_id, source, taken_at, note) VALUES (?, ?, ?, ?)`,
       city.id, primaryProvider().name, now, `poll failed: ${String(e).slice(0, 300)}`,
     );
     if (fails === FAIL_ALERT_AFTER) {
-      queue({
+      await queue({
         channel: "email",
         to: process.env.ADMIN_EMAIL || "admin@localhost",
         subject: `Weather polling failing for ${city.name_en}`,
@@ -149,8 +149,8 @@ async function confirm(city: City, readings: CityReadings): Promise<Reading | nu
   return readings.secondary;
 }
 
-function record(m: MomentView, r: Reading, met: boolean, disputed: boolean, note?: string) {
-  run(
+async function record(m: MomentView, r: Reading, met: boolean, disputed: boolean, note?: string) {
+  await run(
     `INSERT INTO measurements(city_id, moment_id, source, taken_at, temperature, precipitation, snowfall,
       weather_code, condition_met, disputed, note, raw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     m.city_id, m.id, r.source, r.takenAt, r.temperature, r.precipitation, r.snowfall, r.weatherCode,
@@ -169,7 +169,7 @@ async function handleWeatherAsync(m: MomentView, readings: CityReadings, now: nu
     const second = await confirm(m.city, readings);
     if (second) {
       const s = evaluate(m.type, second);
-      record(m, second, s.met, false, "confirmation");
+      await record(m, second, s.met, false, "confirmation");
       if (s.met !== primary.met) {
         // Sources disagree: this poll does not count; an admin can resolve it.
         disputed = true;
@@ -182,28 +182,28 @@ async function handleWeatherAsync(m: MomentView, readings: CityReadings, now: nu
       met = false;
     }
   }
-  record(m, r, primary.met, disputed, disputed ? "sources disagree" : undefined);
-  applyReading(m, met, primary.intensity, r.temperature, sources, now, r.takenAt, report);
+  await record(m, r, primary.met, disputed, disputed ? "sources disagree" : undefined);
+  await applyReading(m, met, primary.intensity, r.temperature, sources, now, r.takenAt, report);
 }
 
 async function handleWeather(m: MomentView, readings: CityReadings, now: number, report: TickReport) {
   // Window moments that missed their window roll over to next year ("no expiry").
   if (m.window_end && now > m.window_end && m.status !== "live") {
-    rollWindow(m, now);
+    await rollWindow(m, now);
     return;
   }
   await handleWeatherAsync(m, readings, now, report);
 }
 
-function rollWindow(m: MomentView, now: number) {
+async function rollWindow(m: MomentView, now: number) {
   const t = m.type;
   if (t.window_start && t.window_end) {
     const [s, e] = nextWindow(t.window_start, t.window_end, m.city.tz, now);
-    run("UPDATE moments SET earliest_start = ?, window_end = ?, hits = 0, candidate_start = NULL WHERE id = ?", s, e, m.id);
+    await run("UPDATE moments SET earliest_start = ?, window_end = ?, hits = 0, candidate_start = NULL WHERE id = ?", s, e, m.id);
   }
 }
 
-function applyReading(
+async function applyReading(
   m: MomentView,
   met: boolean,
   intensity: number,
@@ -216,46 +216,44 @@ function applyReading(
   const required = Math.max(1, Math.ceil(m.type.min_duration_min / 5));
   if (m.status === "sold" || m.status === "on_sale") {
     if (!met) {
-      if (m.hits) run("UPDATE moments SET hits = 0, candidate_start = NULL WHERE id = ?", m.id);
+      if (m.hits) await run("UPDATE moments SET hits = 0, candidate_start = NULL WHERE id = ?", m.id);
       return;
     }
     const hits = m.hits + 1;
     const candidate = m.candidate_start ?? takenAt;
-    run(
-      "UPDATE moments SET hits = ?, candidate_start = ?, max_intensity = MAX(COALESCE(max_intensity, 0), ?) WHERE id = ?",
+    await run(
+      "UPDATE moments SET hits = ?, candidate_start = ?, max_intensity = GREATEST(max_intensity, ?::float8) WHERE id = ?",
       hits, candidate, intensity, m.id,
     );
     if (hits >= required) {
-      if (m.status === "on_sale") expireUnsold(m, now, report);
-      else startMoment(m.id, candidate, sources, report);
+      if (m.status === "on_sale") await expireUnsold(m, now, report);
+      else await startMoment(m.id, candidate, sources, report);
     }
     return;
   }
   if (m.status === "live") {
-    run(
-      `UPDATE moments SET max_intensity = MAX(COALESCE(max_intensity, 0), ?),
-        min_temp = MIN(COALESCE(min_temp, ?), ?), max_temp = MAX(COALESCE(max_temp, ?), ?)
+    await run(
+      `UPDATE moments SET max_intensity = GREATEST(max_intensity, ?::float8),
+        min_temp = LEAST(min_temp, ?::float8), max_temp = GREATEST(max_temp, ?::float8)
         ${met ? ", last_hit_at = ?" : ""} WHERE id = ?`,
-      ...(met
-        ? [intensity, temperature, temperature, temperature, temperature, takenAt, m.id]
-        : [intensity, temperature, temperature, temperature, temperature, m.id]),
+      ...(met ? [intensity, temperature, temperature, takenAt, m.id] : [intensity, temperature, temperature, m.id]),
     );
     const lastHit = met ? takenAt : m.last_hit_at ?? m.started_at ?? now;
     const windowOver = m.window_end !== null && now > m.window_end;
     if (windowOver || (!met && now - lastHit >= m.type.end_quiet_min * MIN)) {
-      endMoment(m.id, windowOver ? Math.min(lastHit, m.window_end!) : lastHit, report);
+      await endMoment(m.id, windowOver ? Math.min(lastHit, m.window_end!) : lastHit, report);
     }
   }
 }
 
-function handleAstronomical(m: MomentView, now: number, report: TickReport) {
+async function handleAstronomical(m: MomentView, now: number, report: TickReport) {
   if (m.type.kind === "sunrise") {
     const rise = sunrise(m.earliest_start ?? now, m.city.lat, m.city.lon, m.city.tz);
     if ((m.status === "sold" || m.status === "on_sale") && now >= rise) {
       if (m.status === "on_sale") return expireUnsold(m, now, report);
-      startMoment(m.id, rise, "astronomy", report);
+      await startMoment(m.id, rise, "astronomy", report);
     } else if (m.status === "live" && now >= (m.started_at ?? rise) + SUNRISE_MINUTES * MIN) {
-      endMoment(m.id, (m.started_at ?? rise) + SUNRISE_MINUTES * MIN, report);
+      await endMoment(m.id, (m.started_at ?? rise) + SUNRISE_MINUTES * MIN, report);
     }
     return;
   }
@@ -264,17 +262,17 @@ function handleAstronomical(m: MomentView, now: number, report: TickReport) {
   const end = m.window_end ?? start + 8 * 60 * MIN;
   if ((m.status === "sold" || m.status === "on_sale") && now >= start) {
     if (m.status === "on_sale") return expireUnsold(m, now, report);
-    startMoment(m.id, start, "astronomical calendar", report);
+    await startMoment(m.id, start, "astronomical calendar", report);
   } else if (m.status === "live" && now >= end) {
-    endMoment(m.id, end, report);
+    await endMoment(m.id, end, report);
   }
 }
 
 // ---------------------------------------------------------------- lifecycle
 
-export function startMoment(id: number, startedAt: number, sources: string, report?: TickReport) {
-  const ok = tx(() => {
-    const res = run(
+export async function startMoment(id: number, startedAt: number, sources: string, report?: TickReport) {
+  const ok = await tx(async () => {
+    const res = await run(
       `UPDATE moments SET status = 'live', started_at = ?, last_hit_at = ?, confirmed_by = ?, hits = 0
        WHERE id = ? AND status = 'sold'`,
       startedAt, Math.max(startedAt, Date.now() - MIN), sources, id,
@@ -283,31 +281,31 @@ export function startMoment(id: number, startedAt: number, sources: string, repo
   });
   if (!ok) return false;
   report?.started.push(id);
-  notifyStarted(getMoment(id)!);
+  await notifyStarted((await getMoment(id))!);
   return true;
 }
 
-export function endMoment(id: number, endedAt: number, report?: TickReport) {
-  const ok = tx(() => {
-    const res = run("UPDATE moments SET status = 'completed', ended_at = ? WHERE id = ? AND status = 'live'", endedAt, id);
+export async function endMoment(id: number, endedAt: number, report?: TickReport) {
+  const ok = await tx(async () => {
+    const res = await run("UPDATE moments SET status = 'completed', ended_at = ? WHERE id = ? AND status = 'live'", endedAt, id);
     return Number(res.changes) === 1;
   });
   if (!ok) return false;
   report?.ended.push(id);
-  const m = getMoment(id)!;
-  notifyEnded(m);
-  if (m.offering_id) openNextMoment(m.offering_id, Date.now(), undefined, true);
+  const m = (await getMoment(id))!;
+  await notifyEnded(m);
+  if (m.offering_id) await openNextMoment(m.offering_id, Date.now(), undefined, true);
   return true;
 }
 
 /** The event happened while nobody owned it: close it and open the next one. */
-function expireUnsold(m: MomentView, now: number, report: TickReport) {
-  const res = run(
+async function expireUnsold(m: MomentView, now: number, report: TickReport) {
+  const res = await run(
     "UPDATE moments SET status = 'expired', started_at = COALESCE(candidate_start, ?) WHERE id = ? AND status = 'on_sale' AND (locked_until IS NULL OR locked_until < ?)",
     now, m.id, now,
   );
   if (Number(res.changes) !== 1) return;
-  cancelAuctionsForMoment(m.id);
+  await cancelAuctionsForMoment(m.id);
   report.expired.push(m.id);
-  if (m.offering_id) openNextMoment(m.offering_id, now, undefined, true);
+  if (m.offering_id) await openNextMoment(m.offering_id, now, undefined, true);
 }

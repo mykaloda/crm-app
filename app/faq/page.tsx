@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function FaqPage() {
   const { lang, t } = await getDict();
-  const items = all<{ id: number; q_en: string; a_en: string; q_ru: string; a_ru: string }>("SELECT * FROM faq ORDER BY sort, id");
+  const items = await all<{ id: number; q_en: string; a_en: string; q_ru: string; a_ru: string }>("SELECT * FROM faq ORDER BY sort, id");
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",

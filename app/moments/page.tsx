@@ -18,8 +18,8 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
   const sp = await searchParams;
   const { lang, t } = await getDict();
   const currency = await getCurrency();
-  const cities = listCities();
-  const types = eventTypes();
+  const cities = await listCities();
+  const types = await eventTypes();
 
   const where = ["c.hidden = 0"];
   const params: (string | number)[] = [];
@@ -41,7 +41,7 @@ export default async function Catalog({ searchParams }: { searchParams: Promise<
   } else {
     where.push("m.status = 'on_sale'");
   }
-  const moments = queryMoments(`${where.join(" AND ")} ORDER BY m.sale_type = 'auction', m.price_cents, c.name_en`, ...params);
+  const moments = await queryMoments(`${where.join(" AND ")} ORDER BY m.sale_type = 'auction', m.price_cents, c.name_en`, ...params);
 
   return (
     <div className="container section">

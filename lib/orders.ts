@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { all, one, run, tx } from "./db";
+import { all, insert, one, run, tx } from "./db";
 import { getMoment, lockMoment, momentTitle, type MomentView } from "./moments";
 import { flushNotifications, giverOrDefault, isEmail, isPhone, link, queue, tpl, type Channel } from "./notify";
 import { usd } from "./currency";
@@ -46,18 +46,18 @@ function newOrderId() {
   return "M" + Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
 }
 
-export function getOrder(id: string) {
-  return one<Order>("SELECT * FROM orders WHERE id = ?", id);
+export async function getOrder(id: string) {
+  return await one<Order>("SELECT * FROM orders WHERE id = ?", id);
 }
-export function getOrderByToken(token: string) {
-  return one<Order>("SELECT * FROM orders WHERE token = ?", token);
+export async function getOrderByToken(token: string) {
+  return await one<Order>("SELECT * FROM orders WHERE token = ?", token);
 }
 
-export function ensureUser(email: string, name?: string | null): number {
+export async function ensureUser(email: string, name?: string | null): Promise<number> {
   const e = email.trim().toLowerCase();
-  const existing = one<{ id: number }>("SELECT id FROM users WHERE email = ?", e);
+  const existing = await one<{ id: number }>("SELECT id FROM users WHERE email = ?", e);
   if (existing) return existing.id;
-  return Number(run("INSERT INTO users(email, name, created_at) VALUES (?, ?, ?)", e, name ?? null, Date.now()).lastInsertRowid);
+  return insert("INSERT INTO users(email, name, created_at) VALUES (?, ?, ?)", e, name ?? null, Date.now());
 }
 
 export interface OrderInput {
@@ -86,14 +86,14 @@ export function validateOrder(i: OrderInput): OrderError | null {
 }
 
 /** Creates a pending order and reserves the moment for 15 minutes. */
-export function createOrder(i: OrderInput): { order?: Order; error?: OrderError } {
+export async function createOrder(i: OrderInput): Promise<{ order?: Order; error?: OrderError }> {
   const error = validateOrder(i);
   if (error) return { error };
-  if (!i.auctionId && !lockMoment(i.momentId, 15)) return { error: "taken" };
-  const moment = getMoment(i.momentId)!;
-  const userId = ensureUser(i.buyerEmail, i.giverName);
+  if (!i.auctionId && !(await lockMoment(i.momentId, 15))) return { error: "taken" };
+  const moment = (await getMoment(i.momentId))!;
+  const userId = await ensureUser(i.buyerEmail, i.giverName);
   const id = newOrderId();
-  run(
+  await run(
     `INSERT INTO orders(id, moment_id, user_id, auction_id, token, lang, buyer_email, giver_name, recipient_name,
       recipient_contact, message, hide_message, send_at, amount_cents, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -101,22 +101,22 @@ export function createOrder(i: OrderInput): { order?: Order; error?: OrderError 
     i.giverName?.trim() || null, i.recipientName.trim(), i.recipientContact.trim(), i.message?.trim() || null,
     i.hideMessage ? 1 : 0, i.sendAt ?? null, i.amountCents ?? moment.price_cents, Date.now(),
   );
-  return { order: getOrder(id)! };
+  return { order: (await getOrder(id))! };
 }
 
 /**
  * Idempotent payment confirmation (Stripe webhook or test payment). Marks the
  * moment sold, issues the certificate and sends the gift if due.
  */
-export function markPaid(orderId: string, paymentIntent?: string | null): Order | undefined {
-  const done = tx(() => {
-    const order = getOrder(orderId);
+export async function markPaid(orderId: string, paymentIntent?: string | null): Promise<Order | undefined> {
+  const done = await tx(async () => {
+    const order = await getOrder(orderId);
     if (!order || order.status === "paid") return false;
-    const moment = getMoment(order.moment_id);
+    const moment = await getMoment(order.moment_id);
     if (!moment || moment.status !== "on_sale") {
       // Lost the race (lock expired and someone else paid). Keep the money traceable for a refund.
-      run("UPDATE orders SET status = 'cancelled', stripe_payment_intent = ? WHERE id = ?", paymentIntent ?? null, orderId);
-      queue({
+      await run("UPDATE orders SET status = 'cancelled', stripe_payment_intent = ? WHERE id = ?", paymentIntent ?? null, orderId);
+      await queue({
         channel: "email",
         to: process.env.ADMIN_EMAIL || order.buyer_email,
         subject: `Payment for unavailable moment: ${orderId}`,
@@ -126,21 +126,21 @@ export function markPaid(orderId: string, paymentIntent?: string | null): Order 
       });
       return false;
     }
-    run(
+    await run(
       "UPDATE orders SET status = 'paid', paid_at = ?, stripe_payment_intent = COALESCE(?, stripe_payment_intent) WHERE id = ?",
       Date.now(), paymentIntent ?? null, orderId,
     );
-    run("UPDATE moments SET status = 'sold', locked_until = NULL WHERE id = ?", order.moment_id);
-    if (order.auction_id) run("UPDATE auctions SET status = 'sold' WHERE id = ?", order.auction_id);
+    await run("UPDATE moments SET status = 'sold', locked_until = NULL WHERE id = ?", order.moment_id);
+    if (order.auction_id) await run("UPDATE auctions SET status = 'sold' WHERE id = ?", order.auction_id);
     // Cancel other pending orders for the same moment.
-    run("UPDATE orders SET status = 'cancelled' WHERE moment_id = ? AND status = 'pending' AND id != ?", order.moment_id, orderId);
+    await run("UPDATE orders SET status = 'cancelled' WHERE moment_id = ? AND status = 'pending' AND id != ?", order.moment_id, orderId);
     return true;
   });
-  const order = getOrder(orderId);
+  const order = await getOrder(orderId);
   if (done && order) {
-    const moment = getMoment(order.moment_id)!;
+    const moment = (await getMoment(order.moment_id))!;
     const title = momentTitle(moment, order.lang);
-    queue({
+    await queue({
       channel: "email",
       to: order.buyer_email,
       subject: tpl(order.lang, "certificateSubject", { title }),
@@ -154,7 +154,7 @@ export function markPaid(orderId: string, paymentIntent?: string | null): Order 
       kind: "certificate",
       orderId: order.id,
     });
-    if (!order.send_at || order.send_at <= Date.now()) sendGift(order.id);
+    if (!order.send_at || order.send_at <= Date.now()) await sendGift(order.id);
     void flushNotifications();
   }
   return order;
@@ -168,10 +168,10 @@ export function recipientChannel(order: Order): Channel | null {
 }
 
 /** Sends the recipient their personal link. */
-export function sendGift(orderId: string) {
-  const order = getOrder(orderId);
+export async function sendGift(orderId: string) {
+  const order = await getOrder(orderId);
   if (!order || order.status !== "paid") return false;
-  const moment = getMoment(order.moment_id)!;
+  const moment = (await getMoment(order.moment_id))!;
   const title = momentTitle(moment, order.lang);
   const vars = {
     recipient: order.recipient_name,
@@ -181,7 +181,7 @@ export function sendGift(orderId: string) {
     link: link(`/m/${order.token}`),
   };
   const channel = isEmail(order.recipient_contact) ? "email" : "sms";
-  queue({
+  await queue({
     channel,
     to: order.recipient_contact,
     subject: tpl(order.lang, "giftSubject", vars),
@@ -189,7 +189,7 @@ export function sendGift(orderId: string) {
     kind: "gift_sent",
     orderId,
   });
-  run("UPDATE orders SET sent_at = ? WHERE id = ?", Date.now(), orderId);
+  await run("UPDATE orders SET sent_at = ? WHERE id = ?", Date.now(), orderId);
   return true;
 }
 
@@ -197,12 +197,12 @@ function lowerFirst(s: string) {
   return s.charAt(0).toLowerCase() + s.slice(1);
 }
 
-function paidOrdersFor(momentId: number) {
-  return all<Order>("SELECT * FROM orders WHERE moment_id = ? AND status = 'paid'", momentId);
+async function paidOrdersFor(momentId: number) {
+  return await all<Order>("SELECT * FROM orders WHERE moment_id = ? AND status = 'paid'", momentId);
 }
 
-export function notifyStarted(moment: MomentView) {
-  for (const order of paidOrdersFor(moment.id)) {
+export async function notifyStarted(moment: MomentView) {
+  for (const order of (await paidOrdersFor(moment.id))) {
     const text = (order.lang === "ru" ? moment.type.start_text_ru : moment.type.start_text_en)
       .replaceAll("{recipient}", order.recipient_name)
       .replaceAll("{in}", order.lang === "ru" ? moment.city.in_ru : moment.city.in_en)
@@ -210,7 +210,7 @@ export function notifyStarted(moment: MomentView) {
     const url = link(`/m/${order.token}`);
     const channel = recipientChannel(order);
     if (channel) {
-      queue({
+      await queue({
         channel,
         to: order.recipient_contact,
         subject: tpl(order.lang, "startedSubject", {}),
@@ -219,7 +219,7 @@ export function notifyStarted(moment: MomentView) {
         orderId: order.id,
       });
     }
-    queue({
+    await queue({
       channel: "email",
       to: order.buyer_email,
       subject: tpl(order.lang, "buyerStartedSubject", {}),
@@ -230,9 +230,9 @@ export function notifyStarted(moment: MomentView) {
   }
 }
 
-export function notifyEnded(moment: MomentView) {
+export async function notifyEnded(moment: MomentView) {
   const duration = (moment.ended_at ?? 0) - (moment.started_at ?? 0);
-  for (const order of paidOrdersFor(moment.id)) {
+  for (const order of (await paidOrdersFor(moment.id))) {
     const channel = recipientChannel(order);
     const vars = {
       title: momentTitle(moment, order.lang),
@@ -240,7 +240,7 @@ export function notifyEnded(moment: MomentView) {
       link: link(`/m/${order.token}`),
     };
     if (channel) {
-      queue({
+      await queue({
         channel,
         to: order.recipient_contact,
         subject: tpl(order.lang, "endedSubject", vars),
@@ -254,9 +254,9 @@ export function notifyEnded(moment: MomentView) {
 
 /** Refund before the event, minus payment fees. */
 export async function refundOrder(orderId: string, feePercent = Number(process.env.REFUND_FEE_PERCENT ?? 5)) {
-  const order = getOrder(orderId);
+  const order = await getOrder(orderId);
   if (!order || order.status !== "paid") throw new Error("Order is not paid");
-  const moment = getMoment(order.moment_id)!;
+  const moment = (await getMoment(order.moment_id))!;
   if (moment.status !== "sold") throw new Error("The event has already started; refunds are closed");
   const refund = Math.round(order.amount_cents * (1 - feePercent / 100));
   const { stripe } = await import("./stripe");
@@ -264,9 +264,9 @@ export async function refundOrder(orderId: string, feePercent = Number(process.e
   if (s && order.stripe_payment_intent) {
     await s.refunds.create({ payment_intent: order.stripe_payment_intent, amount: refund });
   }
-  tx(() => {
-    run("UPDATE orders SET status = 'refunded', refund_cents = ? WHERE id = ?", refund, orderId);
-    run(
+  await tx(async () => {
+    await run("UPDATE orders SET status = 'refunded', refund_cents = ? WHERE id = ?", refund, orderId);
+    await run(
       `UPDATE moments SET status = 'on_sale', hits = 0, candidate_start = NULL, locked_until = NULL
        WHERE id = ? AND status = 'sold'`,
       order.moment_id,
@@ -275,31 +275,31 @@ export async function refundOrder(orderId: string, feePercent = Number(process.e
   return refund;
 }
 
-export function updateRecipientContact(orderId: string, contact: string): boolean {
-  const order = getOrder(orderId);
+export async function updateRecipientContact(orderId: string, contact: string): Promise<boolean> {
+  const order = await getOrder(orderId);
   if (!order || order.status !== "paid") return false;
   if (!isEmail(contact) && !isPhone(contact)) return false;
-  const moment = getMoment(order.moment_id)!;
+  const moment = (await getMoment(order.moment_id))!;
   if (moment.status !== "sold") return false;
-  run("UPDATE orders SET recipient_contact = ?, notify_channel = NULL WHERE id = ?", contact.trim(), orderId);
+  await run("UPDATE orders SET recipient_contact = ?, notify_channel = NULL WHERE id = ?", contact.trim(), orderId);
   return true;
 }
 
-export function cancelStalePending(now = Date.now()) {
-  run("UPDATE orders SET status = 'cancelled' WHERE status = 'pending' AND created_at < ?", now - 2 * 60 * MIN);
+export async function cancelStalePending(now = Date.now()) {
+  await run("UPDATE orders SET status = 'cancelled' WHERE status = 'pending' AND created_at < ?", now - 2 * 60 * MIN);
 }
 
-export function processScheduledSends(now = Date.now()) {
-  const due = all<{ id: string }>(
+export async function processScheduledSends(now = Date.now()) {
+  const due = await all<{ id: string }>(
     "SELECT id FROM orders WHERE status = 'paid' AND sent_at IS NULL AND send_at IS NOT NULL AND send_at <= ?",
     now,
   );
-  for (const o of due) sendGift(o.id);
+  for (const o of due) await sendGift(o.id);
   return due.length;
 }
 
-export function ordersForEmail(email: string) {
-  return all<Order>("SELECT * FROM orders WHERE buyer_email = ? AND status != 'pending' ORDER BY created_at DESC", email.toLowerCase());
+export async function ordersForEmail(email: string) {
+  return await all<Order>("SELECT * FROM orders WHERE buyer_email = ? AND status != 'pending' ORDER BY created_at DESC", email.toLowerCase());
 }
 
 export function price(order: Order) {

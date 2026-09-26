@@ -7,9 +7,9 @@ import { formatDateTime, formatDuration, formatTime } from "@/lib/time";
 /** 1080x1350 picture for social media (archive), or a teaser before the event. */
 export async function GET(_: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const order = getOrderByToken(token);
+  const order = await getOrderByToken(token);
   if (!order || order.status !== "paid" || order.deleted_by_recipient) return new Response("Not found", { status: 404 });
-  const m = getMoment(order.moment_id)!;
+  const m = (await getMoment(order.moment_id))!;
   const lang = order.lang;
   const t = dictionaries[lang];
   const lines: string[] = [];

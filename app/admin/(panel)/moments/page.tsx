@@ -7,17 +7,17 @@ import { cancelMoment, createOneOff, forceEnd, forceStart, openManualMoment } fr
 
 export default async function MomentsAdmin({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const { status } = await searchParams;
-  const moments = queryMoments(
+  const moments = await queryMoments(
     `${status ? "m.status = ?" : "m.status NOT IN ('expired', 'cancelled')"} ORDER BY m.id DESC LIMIT 300`,
     ...(status ? [status] : []),
   );
-  const cities = listCities(true);
-  const types = eventTypes();
-  const manualOfferings = all<{ id: number; slug: string }>(
+  const cities = await listCities(true);
+  const types = await eventTypes();
+  const manualOfferings = await all<{ id: number; slug: string }>(
     "SELECT o.id, o.slug FROM offerings o JOIN event_types t ON t.id = o.event_type_id WHERE t.recurrence = 'manual'",
   );
   const owners = new Map(
-    all<{ moment_id: number; recipient_name: string; id: string }>("SELECT moment_id, recipient_name, id FROM orders WHERE status = 'paid'").map(
+    (await all<{ moment_id: number; recipient_name: string; id: string }>("SELECT moment_id, recipient_name, id FROM orders WHERE status = 'paid'")).map(
       (o) => [o.moment_id, o],
     ),
   );

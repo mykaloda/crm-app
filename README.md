@@ -12,7 +12,7 @@ WEATHER_PROVIDER=simulated npm run dev
 
 Открыть http://localhost:3000, админка — `/admin` (в dev пароль `admin`, в production задайте `ADMIN_PASSWORD`).
 
-Нужен Node.js ≥ 22.13 (встроенный SQLite). Каталог из ТЗ (8 городов, 6 типов событий, цены) создается автоматически при первом запуске в `data/moment.db`.
+Нужен Node.js ≥ 20. База — PostgreSQL: если `DATABASE_URL` не задан, используется встроенный Postgres (PGlite) в `data/pg`, ничего устанавливать не нужно. Каталог из ТЗ (8 городов, 6 типов событий, цены) создается автоматически при первом запуске.
 
 ### Режимы без ключей
 
@@ -44,16 +44,23 @@ WEATHER_PROVIDER=simulated npm run dev
 - **Нефункциональное (9):** SSR каталога и городов, OG-картинки, sitemap/robots, токены получателя 43 символа (32 случайных байта), honeypot и минимальное время заполнения форм, платежные данные только у Stripe, анимации уважают `prefers-reduced-motion`.
 - **Юридическое (10):** черновик оферты (цифровой подарок, а не право на явление; правила фиксации; без срока; возврат; спорные фиксации и 14 дней на претензию; согласие дарителя; правила аукциона; налоги) — **требует проверки юристом**.
 
+## Деплой на Vercel
+
+1. Vercel → Add New → Project → импортировать `mykaloda/crm-app` (ветка с этим кодом или `main` после слияния). Настройки сборки по умолчанию.
+2. Storage → Create Database → **Neon** (Postgres) → подключить к проекту. Vercel сам добавит `DATABASE_URL` / `POSTGRES_URL`. Таблицы и каталог создаются при первом запросе.
+3. Environment Variables: `SITE_URL` (адрес сайта, например `https://moment.vercel.app`), `ADMIN_PASSWORD`, `CRON_SECRET` (любая длинная случайная строка), для демо без ключей погоды — `WEATHER_PROVIDER=simulated`. Остальные ключи (Stripe, Resend, Twilio, OpenWeatherMap) — по мере готовности, см. `.env.example`.
+4. Redeploy. Мониторинг погоды: на тарифе Pro добавьте Cron Job `*/5 * * * *` на `/api/cron/tick` (Vercel сам передает `CRON_SECRET`); на Hobby включите workflow `.github/workflows/monitor.yml` — задайте в GitHub → Settings → Secrets секреты `SITE_URL` и `CRON_SECRET`.
+
 ## Мониторинг в production
 
-- Долгоживущий сервер (Railway, Docker, VPS): встроенный планировщик в `instrumentation.ts` запускает монитор раз в минуту (каждый город опрашивается не чаще раза в 5 минут).
-- Serverless: `INTERNAL_SCHEDULER=0` и внешний cron каждые 5 минут на `GET /api/cron/tick` с заголовком `Authorization: Bearer $CRON_SECRET`.
+- Долгоживущий сервер (Railway, Docker, VPS): задайте `DATABASE_URL` (или постоянный том для PGlite, `PGLITE_DIR`); встроенный планировщик в `instrumentation.ts` запускает монитор раз в минуту (каждый город опрашивается не чаще раза в 5 минут).
+- Serverless (на Vercel встроенный планировщик отключается сам): внешний cron каждые 5 минут на `GET /api/cron/tick` с заголовком `Authorization: Bearer $CRON_SECRET`.
 
 Stripe webhook: `POST /api/stripe/webhook`, события `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`.
 
 ## Отличия от рекомендованного стека
 
-- **SQLite вместо PostgreSQL** — чтобы проект запускался без внешних сервисов. Вся работа с БД сосредоточена в `lib/*.ts`, схема в `lib/db.ts` переносится в PostgreSQL почти без изменений. Для Vercel/serverless перенос на Postgres обязателен (файл SQLite там не сохраняется); на Railway/Docker достаточно постоянного тома (`DATABASE_PATH`).
+- **PostgreSQL** без ORM: схема и доступ в `lib/db.ts`, драйвер `postgres`; локально — встроенный PGlite с тем же диалектом.
 - **Планировщик вместо Redis + BullMQ** — для MVP хватает периодического тика с защитой от параллельного запуска и повторами запросов. Очередь стоит добавить при росте числа городов.
 - **Web push** — канал заложен, но в MVP сообщения только журналируются (в ТЗ он опционален).
 - Письма аукциона пока только на английском.
@@ -63,7 +70,7 @@ Stripe webhook: `POST /api/stripe/webhook`, события `checkout.session.com
 ```
 app/            страницы, server actions, API (cron, Stripe webhook, PDF, картинки)
 components/     UI-компоненты
-lib/db.ts       схема и доступ к БД        lib/seed.ts     стартовый каталог из ТЗ
+lib/db.ts       схема и доступ к Postgres  lib/seed.ts     стартовый каталог из ТЗ
 lib/monitor.ts  движок фиксации событий    lib/weather.ts  погодные провайдеры и симулятор
 lib/orders.ts   заказы, оплата, возвраты   lib/auction.ts  аукционы
 lib/notify.ts   email/SMS и шаблоны        lib/pdf.ts      PDF-сертификат

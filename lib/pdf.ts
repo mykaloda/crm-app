@@ -45,9 +45,9 @@ function wrap(text: string, font: PDFFont, size: number, max: number): string[] 
 
 /** Branded A4 landscape certificate for an order. */
 export async function certificatePdf(orderId: string): Promise<Uint8Array | null> {
-  const order = getOrder(orderId);
+  const order = await getOrder(orderId);
   if (!order || order.status !== "paid") return null;
-  const moment = getMoment(order.moment_id)!;
+  const moment = (await getMoment(order.moment_id))!;
   const lang = order.lang;
 
   const doc = await PDFDocument.create();

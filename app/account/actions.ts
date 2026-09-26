@@ -22,7 +22,7 @@ export async function login(state: LoginState, form: FormData): Promise<LoginSta
   if (state.step === "email") {
     const email = String(form.get("email") ?? "").trim().toLowerCase();
     if (!isEmail(email)) return { step: "email", error: "email" };
-    const demoCode = requestLoginCode(email, lang);
+    const demoCode = await requestLoginCode(email, lang);
     return { step: "code", email, demoCode };
   }
   const ok = await verifyLoginCode(state.email ?? "", String(form.get("code") ?? ""));
@@ -38,21 +38,21 @@ export async function logout() {
 
 async function ownOrder(form: FormData) {
   const user = await currentUser();
-  const order = getOrder(String(form.get("order")));
+  const order = await getOrder(String(form.get("order")));
   if (!user || !order || order.buyer_email !== user.email) return null;
   return order;
 }
 
 export async function changeContact(form: FormData) {
   const order = await ownOrder(form);
-  if (order) updateRecipientContact(order.id, String(form.get("contact") ?? ""));
+  if (order) await updateRecipientContact(order.id, String(form.get("contact") ?? ""));
   revalidatePath("/account");
 }
 
 export async function resend(form: FormData) {
   const order = await ownOrder(form);
   if (order) {
-    sendGift(order.id);
+    await sendGift(order.id);
     await flushNotifications();
   }
   revalidatePath("/account");
@@ -75,12 +75,12 @@ export async function attachCard() {
   if (!user) redirect("/account");
   if (!stripe()) {
     // Test mode: mark a test card as attached.
-    run("UPDATE users SET card_on_file = 1 WHERE id = ?", user.id);
+    await run("UPDATE users SET card_on_file = 1 WHERE id = ?", user.id);
     revalidatePath("/account");
     return;
   }
   const { session, customer } = await createSetupSession(user.id, user.email, user.stripe_customer_id);
-  run("UPDATE users SET stripe_customer_id = ? WHERE id = ?", customer, user.id);
+  await run("UPDATE users SET stripe_customer_id = ? WHERE id = ?", customer, user.id);
   redirect(session.url!);
 }
 

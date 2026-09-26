@@ -145,7 +145,17 @@ function hash(s: string): number {
 
 const RAIN_CHANCE: Record<string, number> = { dubai: 0.02, bali: 0.25, london: 0.22 };
 
-function simulatedAt(city: City, ts: number, source: string): Reading {
+interface Override {
+  precipitation: number | null;
+  weather_code: number | null;
+}
+
+/** Manual overrides from the admin panel ("make it rain in Paris now"). */
+async function overrideFor(city: City, ts: number) {
+  return one<Override>("SELECT precipitation, weather_code FROM sim_overrides WHERE city_id = ? AND until > ?", city.id, ts);
+}
+
+function simulatedAt(city: City, ts: number, source: string, o?: Override): Reading {
   const p = localParts(ts, city.tz);
   const southern = city.lat < 0;
   const monthAngle = ((p.month - (southern ? 1 : 7)) / 12) * 2 * Math.PI;
@@ -162,12 +172,6 @@ function simulatedAt(city: City, ts: number, source: string): Reading {
   if (wet && temperature < 1) code = 73;
   if (wet && temperature > 18 && hash(`${city.slug}:${block}:th`) < 0.2) code = 95;
 
-  // Manual overrides from the admin panel ("make it rain in Paris now").
-  const o = one<{ precipitation: number | null; weather_code: number | null; until: number }>(
-    "SELECT * FROM sim_overrides WHERE city_id = ? AND until > ?",
-    city.id,
-    ts,
-  );
   if (o) {
     if (o.precipitation !== null) precipitation = o.precipitation;
     if (o.weather_code !== null) code = o.weather_code;
@@ -190,7 +194,8 @@ function simulator(name: string): Provider {
   return {
     name,
     async current(city) {
-      return simulatedAt(city, Date.now(), name);
+      const now = Date.now();
+      return simulatedAt(city, now, name, await overrideFor(city, now));
     },
     async forecast(city) {
       const days: ForecastDay[] = [];
@@ -288,7 +293,7 @@ export function rememberReading(city: City, r: Reading) {
 
 /** Current weather for display: latest stored measurement if fresh, else API. */
 export async function currentWeather(city: City): Promise<Reading | null> {
-  const stored = one<{ taken_at: number; source: string; temperature: number; precipitation: number; snowfall: number; weather_code: number }>(
+  const stored = await one<{ taken_at: number; source: string; temperature: number; precipitation: number; snowfall: number; weather_code: number }>(
     "SELECT * FROM measurements WHERE city_id = ? ORDER BY taken_at DESC LIMIT 1",
     city.id,
   );
@@ -326,8 +331,8 @@ export function skyOf(code: number | null | undefined): Sky {
   return "cloudy";
 }
 
-export function saveOverride(cityId: number, precipitation: number | null, code: number | null, minutes: number) {
-  run(
+export async function saveOverride(cityId: number, precipitation: number | null, code: number | null, minutes: number) {
+  await run(
     `INSERT INTO sim_overrides(city_id, precipitation, weather_code, until) VALUES (?, ?, ?, ?)
      ON CONFLICT(city_id) DO UPDATE SET precipitation = excluded.precipitation,
        weather_code = excluded.weather_code, until = excluded.until`,

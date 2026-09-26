@@ -28,8 +28,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     );
   }
 
-  const orders = ordersForEmail(user.email);
-  const bids = bidsForUser(user.id);
+  const orders = await ordersForEmail(user.email);
+  const bids = await bidsForUser(user.id);
 
   return (
     <div className="container section">
@@ -44,8 +44,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <h2 style={{ marginTop: 32 }}>{t.account.orders}</h2>
       {orders.length === 0 && <p className="muted">{t.account.noOrders}</p>}
       <div className="stack">
-        {orders.map((o) => {
-          const m = getMoment(o.moment_id)!;
+        {orders.map(async (o) => {
+          const m = (await getMoment(o.moment_id))!;
           const beforeEvent = o.status === "paid" && m.status === "sold";
           const status =
             o.status === "refunded" || o.status === "cancelled"
@@ -111,8 +111,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <div className="table-wrap">
           <table className="table">
             <tbody>
-              {bids.map((b) => {
-                const m = getMoment(b.moment_id)!;
+              {bids.map(async (b) => {
+                const m = (await getMoment(b.moment_id))!;
                 return (
                   <tr key={b.id}>
                     <td>

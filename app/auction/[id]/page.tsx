@@ -20,7 +20,7 @@ type Props = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const { lang, t } = await getDict();
-  const a = getAuction(Number(id));
+  const a = await getAuction(Number(id));
   return a ? { title: `${t.auction.title}: ${momentTitle(a.moment, lang)}` } : {};
 }
 
@@ -28,11 +28,11 @@ export default async function AuctionPage({ params }: Props) {
   const { id } = await params;
   const { lang, t } = await getDict();
   const currency = await getCurrency();
-  const a = getAuction(Number(id));
+  const a = await getAuction(Number(id));
   if (!a) notFound();
   const user = await currentUser();
-  const bids = bidsFor(a.id);
-  const top = topBid(a.id);
+  const bids = await bidsFor(a.id);
+  const top = await topBid(a.id);
   const active = a.status === "active" && a.ends_at > Date.now();
   const tz = a.moment.city.tz;
 
@@ -78,7 +78,7 @@ export default async function AuctionPage({ params }: Props) {
             top?.user_id === user.id ? (
               <p className="notice notice-gold">{t.auction.leading}</p>
             ) : (
-              <BidForm auctionId={a.id} minCents={minNextBid(a)} t={t} />
+              <BidForm auctionId={a.id} minCents={(await minNextBid(a))} t={t} />
             )
           ) : null}
           {a.status === "awaiting_payment" &&

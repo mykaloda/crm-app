@@ -2,10 +2,10 @@ import { all } from "@/lib/db";
 import { eventTypes, listCities, type Offering } from "@/lib/moments";
 import { saveCity, saveOffering } from "../../actions";
 
-export default function CitiesAdmin() {
-  const cities = listCities(true);
-  const types = eventTypes();
-  const offerings = all<Offering>("SELECT * FROM offerings ORDER BY event_type_id");
+export default async function CitiesAdmin() {
+  const cities = await listCities(true);
+  const types = await eventTypes();
+  const offerings = await all<Offering>("SELECT * FROM offerings ORDER BY event_type_id");
   const typeName = (id: number) => types.find((t) => t.id === id)?.name_en ?? id;
 
   return (

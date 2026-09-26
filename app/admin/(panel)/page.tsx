@@ -4,32 +4,32 @@ import { DAY } from "@/lib/time";
 import { listCities } from "@/lib/moments";
 import { runTick } from "../actions";
 
-function sales(since: number) {
-  return one<{ n: number; s: number | null }>(
-    "SELECT COUNT(*) AS n, SUM(amount_cents) AS s FROM orders WHERE status = 'paid' AND paid_at >= ?",
+async function sales(since: number) {
+  return (await one<{ n: number; s: number | null }>(
+    "SELECT COUNT(*)::int AS n, SUM(amount_cents)::float8 AS s FROM orders WHERE status = 'paid' AND paid_at >= ?",
     since,
-  )!;
+  ))!;
 }
 
-export default function Dashboard() {
+export default async function Dashboard() {
   const now = Date.now();
   const periods = [
-    ["Today", sales(now - DAY)],
-    ["7 days", sales(now - 7 * DAY)],
-    ["30 days", sales(now - 30 * DAY)],
-    ["All time", sales(0)],
+    ["Today", await sales(now - DAY)],
+    ["7 days", await sales(now - 7 * DAY)],
+    ["30 days", await sales(now - 30 * DAY)],
+    ["All time", await sales(0)],
   ] as const;
-  const created = one<{ n: number }>("SELECT COUNT(*) AS n FROM orders WHERE created_at >= ?", now - 30 * DAY)!.n;
-  const paid = one<{ n: number }>("SELECT COUNT(*) AS n FROM orders WHERE status IN ('paid', 'refunded') AND created_at >= ?", now - 30 * DAY)!.n;
-  const statuses = all<{ status: string; n: number }>("SELECT status, COUNT(*) AS n FROM moments GROUP BY status");
+  const created = (await one<{ n: number }>("SELECT COUNT(*)::int AS n FROM orders WHERE created_at >= ?", now - 30 * DAY))!.n;
+  const paid = (await one<{ n: number }>("SELECT COUNT(*)::int AS n FROM orders WHERE status IN ('paid', 'refunded') AND created_at >= ?", now - 30 * DAY))!.n;
+  const statuses = await all<{ status: string; n: number }>("SELECT status, COUNT(*)::int AS n FROM moments GROUP BY status");
   const totalSold = statuses.filter((s) => ["sold", "live", "completed"].includes(s.status)).reduce((a, s) => a + s.n, 0);
   const waiting = statuses.find((s) => s.status === "sold")?.n ?? 0;
-  const byCity = all<{ name: string; n: number; avg: number | null }>(
-    `SELECT c.name_en AS name, COUNT(*) AS n, AVG(m.started_at - o.paid_at) AS avg
+  const byCity = await all<{ name: string; n: number; avg: number | null }>(
+    `SELECT c.name_en AS name, COUNT(*)::int AS n, AVG(m.started_at - o.paid_at)::float8 AS avg
      FROM moments m JOIN cities c ON c.id = m.city_id JOIN orders o ON o.moment_id = m.id AND o.status = 'paid'
      WHERE m.started_at IS NOT NULL GROUP BY c.id ORDER BY c.name_en`,
   );
-  const failing = listCities(true).filter((c) => c.fail_count >= 3);
+  const failing = (await listCities(true)).filter((c) => c.fail_count >= 3);
 
   return (
     <div className="stack">

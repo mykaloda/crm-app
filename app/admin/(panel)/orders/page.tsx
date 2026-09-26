@@ -18,7 +18,7 @@ export default async function OrdersAdmin({ searchParams }: { searchParams: Prom
     where.push("status = ?");
     params.push(status);
   }
-  const orders = all<Order>(
+  const orders = await all<Order>(
     `SELECT * FROM orders ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC LIMIT 200`,
     ...params,
   );
@@ -37,8 +37,8 @@ export default async function OrdersAdmin({ searchParams }: { searchParams: Prom
         <button className="btn btn-ghost btn-small">Search</button>
       </form>
       <div className="stack">
-        {orders.map((o) => {
-          const m = getMoment(o.moment_id)!;
+        {orders.map(async (o) => {
+          const m = (await getMoment(o.moment_id))!;
           return (
             <div key={o.id} className="panel" style={{ padding: 16 }}>
               <div className="row between">

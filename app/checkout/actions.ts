@@ -28,16 +28,16 @@ export async function checkout(_: CheckoutState, form: FormData): Promise<Checko
   let momentId: number;
   let amountCents: number | undefined;
   if (auctionId) {
-    const a = getAuction(auctionId);
+    const a = await getAuction(auctionId);
     const user = await currentUser();
-    const top = a ? topBid(a.id) : undefined;
+    const top = a ? (await topBid(a.id)) : undefined;
     if (!a || a.status !== "awaiting_payment" || !user || !top || top.id !== a.winner_bid_id || top.user_id !== user.id) {
       return { error: "taken" };
     }
     momentId = a.moment_id;
     amountCents = top.amount_cents;
   } else {
-    const m = currentMomentOfSeries(slug);
+    const m = await currentMomentOfSeries(slug);
     if (!m || m.status !== "on_sale" || m.sale_type !== "fixed") return { error: "taken" };
     momentId = m.id;
   }
@@ -47,7 +47,7 @@ export async function checkout(_: CheckoutState, form: FormData): Promise<Checko
   const sendAt = sendLater && sendAtIso ? Date.parse(sendAtIso) : null;
   if (sendLater && (!sendAt || Number.isNaN(sendAt))) return { error: "date" };
 
-  const { order, error } = createOrder({
+  const { order, error } = await createOrder({
     momentId,
     lang,
     buyerEmail: String(form.get("buyerEmail") ?? ""),
@@ -65,16 +65,16 @@ export async function checkout(_: CheckoutState, form: FormData): Promise<Checko
   if (stripe()) {
     let url: string | null = null;
     try {
-      const m = getMoment(momentId)!;
+      const m = (await getMoment(momentId))!;
       const session = await createPaymentSession(order, momentTitle(m, lang), `/checkout/cancel?order=${order.id}`);
-      run("UPDATE orders SET stripe_session_id = ? WHERE id = ?", session.id, order.id);
+      await run("UPDATE orders SET stripe_session_id = ? WHERE id = ?", session.id, order.id);
       // Keep the reservation for as long as the Stripe session lives.
-      if (!auctionId) run("UPDATE moments SET locked_until = ? WHERE id = ?", Date.now() + 31 * MIN, momentId);
+      if (!auctionId) await run("UPDATE moments SET locked_until = ? WHERE id = ?", Date.now() + 31 * MIN, momentId);
       url = session.url;
     } catch (e) {
       console.error("Stripe session failed", e);
-      if (!auctionId) unlockMoment(momentId);
-      run("UPDATE orders SET status = 'cancelled' WHERE id = ?", order.id);
+      if (!auctionId) await unlockMoment(momentId);
+      await run("UPDATE orders SET status = 'cancelled' WHERE id = ?", order.id);
       return { error: "generic" };
     }
     redirect(url!);
@@ -86,17 +86,17 @@ export async function checkout(_: CheckoutState, form: FormData): Promise<Checko
 export async function completeTestPayment(form: FormData) {
   if (stripe()) throw new Error("Test payments are disabled when Stripe is configured");
   const id = String(form.get("order"));
-  markPaid(id, null);
+  await markPaid(id, null);
   redirect(`/order/${id}?paid=1`);
 }
 
 export async function cancelTestPayment(form: FormData) {
   const id = String(form.get("order"));
-  const order = getOrder(id);
+  const order = await getOrder(id);
   if (order && order.status === "pending") {
-    run("UPDATE orders SET status = 'cancelled' WHERE id = ?", id);
-    if (!order.auction_id) unlockMoment(order.moment_id);
-    const m = getMoment(order.moment_id);
+    await run("UPDATE orders SET status = 'cancelled' WHERE id = ?", id);
+    if (!order.auction_id) await unlockMoment(order.moment_id);
+    const m = await getMoment(order.moment_id);
     redirect(m ? momentPath(m) : "/moments");
   }
   redirect("/moments");

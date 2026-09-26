@@ -12,10 +12,10 @@ export default async function TestPayPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const { lang, t } = await getDict();
   if (stripe()) notFound();
-  const order = getOrder(id);
+  const order = await getOrder(id);
   if (!order) notFound();
   if (order.status === "paid") redirect(`/order/${id}`);
-  const m = getMoment(order.moment_id)!;
+  const m = (await getMoment(order.moment_id))!;
   return (
     <div className="container section narrow">
       <div className="panel">

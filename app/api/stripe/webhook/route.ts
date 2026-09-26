@@ -21,10 +21,10 @@ export async function POST(req: Request) {
     if (session.mode === "payment" && session.payment_status === "paid") {
       const orderId = session.metadata?.order_id;
       const pi = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
-      if (orderId) markPaid(orderId, pi ?? null);
+      if (orderId) await markPaid(orderId, pi ?? null);
     }
     if (session.mode === "setup" && session.metadata?.user_id) {
-      run(
+      await run(
         "UPDATE users SET card_on_file = 1, stripe_customer_id = COALESCE(?, stripe_customer_id) WHERE id = ?",
         typeof session.customer === "string" ? session.customer : null,
         Number(session.metadata.user_id),
@@ -34,10 +34,10 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.expired") {
     const orderId = event.data.object.metadata?.order_id;
-    const order = orderId ? getOrder(orderId) : undefined;
+    const order = orderId ? (await getOrder(orderId)) : undefined;
     if (order && order.status === "pending") {
-      run("UPDATE orders SET status = 'cancelled' WHERE id = ?", order.id);
-      if (!order.auction_id) unlockMoment(order.moment_id);
+      await run("UPDATE orders SET status = 'cancelled' WHERE id = ?", order.id);
+      if (!order.auction_id) await unlockMoment(order.moment_id);
     }
   }
 

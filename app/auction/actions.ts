@@ -17,7 +17,7 @@ export async function bid(_: BidState, form: FormData): Promise<BidState> {
   const auctionId = Number(form.get("auction"));
   const amount = Math.round(Number(String(form.get("amount")).replace(",", ".")) * 100);
   if (!Number.isFinite(amount) || amount <= 0) return { error: "low" };
-  const res = placeBid(auctionId, user, amount);
+  const res = await placeBid(auctionId, user, amount);
   void flushNotifications();
   revalidatePath(`/auction/${auctionId}`);
   return res.error ? res : { ok: true };

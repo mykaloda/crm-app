@@ -18,7 +18,7 @@ export function isPhone(s: string) {
   return /^\+?[0-9\s\-()]{7,20}$/.test(s.trim()) && s.replace(/\D/g, "").length >= 7;
 }
 
-export function queue(opts: {
+export async function queue(opts: {
   channel: Channel;
   to: string;
   subject?: string;
@@ -26,7 +26,7 @@ export function queue(opts: {
   kind: string;
   orderId?: string;
 }) {
-  run(
+  await run(
     `INSERT INTO notifications(channel, recipient, subject, body, kind, order_id, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     opts.channel,
@@ -55,13 +55,13 @@ export async function flushNotifications() {
   if (flushing) return;
   flushing = true;
   try {
-    const pending = all<Pending>("SELECT * FROM notifications WHERE status = 'queued' ORDER BY id LIMIT 50");
+    const pending = await all<Pending>("SELECT * FROM notifications WHERE status = 'queued' ORDER BY id LIMIT 50");
     for (const n of pending) {
       try {
         const delivered = await deliver(n);
-        run("UPDATE notifications SET status = ?, error = NULL WHERE id = ?", delivered ? "sent" : "logged", n.id);
+        await run("UPDATE notifications SET status = ?, error = NULL WHERE id = ?", delivered ? "sent" : "logged", n.id);
       } catch (e) {
-        run("UPDATE notifications SET status = 'failed', error = ? WHERE id = ?", String(e).slice(0, 500), n.id);
+        await run("UPDATE notifications SET status = 'failed', error = ? WHERE id = ?", String(e).slice(0, 500), n.id);
       }
     }
   } finally {

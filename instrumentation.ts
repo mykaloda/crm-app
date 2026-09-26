@@ -7,6 +7,8 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (process.env.INTERNAL_SCHEDULER === "0") return;
+  // Serverless functions don't live between requests: use a cron calling /api/cron/tick.
+  if (process.env.VERCEL) return;
   if (process.env.NEXT_PHASE === "phase-production-build") return;
   const { tick } = await import("./lib/monitor");
   const run = () =>

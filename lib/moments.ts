@@ -1,4 +1,4 @@
-import { all, one, run } from "./db";
+import { all, insert, one, run } from "./db";
 import { DAY, MIN, nextWindow, seasonStart } from "./time";
 import type { Lang } from "./i18n";
 
@@ -98,21 +98,11 @@ const MOMENT_SELECT = `SELECT m.*, o.slug AS o_slug,
 
 type Row = Moment & Record<string, unknown>;
 
-let typeCache: Map<number, EventType> | null = null;
-export function eventTypes(): EventType[] {
+export async function eventTypes(): Promise<EventType[]> {
   return all<EventType>("SELECT * FROM event_types ORDER BY sort, id");
 }
-export function invalidateTypes() {
-  typeCache = null;
-}
-function typeById(id: number): EventType {
-  if (!typeCache) typeCache = new Map(eventTypes().map((t) => [t.id, t]));
-  const t = typeCache.get(id);
-  if (!t) throw new Error(`Unknown event type ${id}`);
-  return t;
-}
 
-function toView(r: Row): MomentView {
+function toView(r: Row, types: Map<number, EventType>): MomentView {
   const city: City = {
     id: r.c_id as number,
     slug: r.c_slug as string,
@@ -132,30 +122,34 @@ function toView(r: Row): MomentView {
   for (const [k, v] of Object.entries(r)) if (!/^(c|t|o)_/.test(k)) (view as unknown as Record<string, unknown>)[k] = v;
   view.slug = (r.o_slug as string | null) ?? null;
   view.city = city;
-  view.type = typeById(r.event_type_id);
+  const type = types.get(r.event_type_id);
+  if (!type) throw new Error(`Unknown event type ${r.event_type_id}`);
+  view.type = type;
   return view;
 }
 
-export function queryMoments(where = "1=1", ...params: (string | number | null)[]): MomentView[] {
-  return all<Row>(`${MOMENT_SELECT} WHERE ${where}`, ...params).map(toView);
+export async function queryMoments(where = "1=1", ...params: (string | number | null)[]): Promise<MomentView[]> {
+  const [rows, types] = await Promise.all([all<Row>(`${MOMENT_SELECT} WHERE ${where}`, ...params), eventTypes()]);
+  const byId = new Map(types.map((t) => [t.id, t]));
+  return rows.map((r) => toView(r, byId));
 }
 
-export function getMoment(id: number): MomentView | undefined {
-  return queryMoments("m.id = ?", id)[0];
+export async function getMoment(id: number): Promise<MomentView | undefined> {
+  return (await queryMoments("m.id = ?", id))[0];
 }
 
 /** The current moment of a series ("next-rain-paris"): the open one, else the latest.
  *  One-off moments created by the admin are addressed as "m<id>". */
-export function currentMomentOfSeries(slug: string): MomentView | undefined {
+export async function currentMomentOfSeries(slug: string): Promise<MomentView | undefined> {
   const oneOff = /^m(\d+)$/.exec(slug);
   if (oneOff) {
-    const m = getMoment(Number(oneOff[1]));
+    const m = await getMoment(Number(oneOff[1]));
     return m && !m.offering_id ? m : undefined;
   }
-  return queryMoments(
+  return (await queryMoments(
     `o.slug = ? ORDER BY CASE WHEN m.status = 'on_sale' THEN 0 ELSE 1 END, m.seq DESC LIMIT 1`,
     slug,
-  )[0];
+  ))[0];
 }
 
 export function momentPath(m: MomentView): string {
@@ -203,9 +197,9 @@ export function availability(m: MomentView, now = Date.now()): Availability {
 }
 
 /** Reserve a fixed-price moment for checkout. Returns false if someone else holds it. */
-export function lockMoment(id: number, minutes = 15): boolean {
+export async function lockMoment(id: number, minutes = 15): Promise<boolean> {
   const now = Date.now();
-  const res = run(
+  const res = await run(
     `UPDATE moments SET locked_until = ?
      WHERE id = ? AND status = 'on_sale' AND (locked_until IS NULL OR locked_until < ?)`,
     now + minutes * MIN,
@@ -215,8 +209,8 @@ export function lockMoment(id: number, minutes = 15): boolean {
   return Number(res.changes) === 1;
 }
 
-export function unlockMoment(id: number) {
-  run("UPDATE moments SET locked_until = NULL WHERE id = ? AND status = 'on_sale'", id);
+export async function unlockMoment(id: number) {
+  await run("UPDATE moments SET locked_until = NULL WHERE id = ? AND status = 'on_sale'", id);
 }
 
 /**
@@ -224,18 +218,18 @@ export function unlockMoment(id: number) {
  * first launch). Computes when monitoring for it may start. For auction
  * offerings a lot is created automatically. Returns the new moment id or null.
  */
-export function openNextMoment(
+export async function openNextMoment(
   offeringId: number,
   from: number,
   manual?: { start: number; end: number },
   afterEvent = false,
-): number | null {
-  const o = one<Offering>("SELECT * FROM offerings WHERE id = ?", offeringId);
+): Promise<number | null> {
+  const o = await one<Offering>("SELECT * FROM offerings WHERE id = ?", offeringId);
   if (!o || !o.active) return null;
-  const type = typeById(o.event_type_id);
-  const city = one<City>("SELECT * FROM cities WHERE id = ?", o.city_id)!;
-  const open = one<{ n: number }>(
-    "SELECT COUNT(*) AS n FROM moments WHERE offering_id = ? AND status = 'on_sale'",
+  const type = (await one<EventType>("SELECT * FROM event_types WHERE id = ?", o.event_type_id))!;
+  const city = (await one<City>("SELECT * FROM cities WHERE id = ?", o.city_id))!;
+  const open = await one<{ n: number }>(
+    "SELECT COUNT(*)::int AS n FROM moments WHERE offering_id = ? AND status = 'on_sale'",
     offeringId,
   );
   if (open && open.n > 0) return null;
@@ -255,19 +249,18 @@ export function openNextMoment(
     windowEnd = manual.end;
   }
 
-  const seq = (one<{ s: number | null }>("SELECT MAX(seq) AS s FROM moments WHERE offering_id = ?", offeringId)?.s ?? 0) + 1;
+  const seq = ((await one<{ s: number | null }>("SELECT MAX(seq) AS s FROM moments WHERE offering_id = ?", offeringId))?.s ?? 0) + 1;
   const now = Date.now();
-  const res = run(
+  const momentId = await insert(
     `INSERT INTO moments(offering_id, city_id, event_type_id, seq, price_cents, sale_type, status, earliest_start,
       window_end, created_at) VALUES (?, ?, ?, ?, ?, ?, 'on_sale', ?, ?, ?)`,
     o.id, o.city_id, o.event_type_id, seq, o.price_cents, o.sale_type, earliest, windowEnd, now,
   );
-  const momentId = Number(res.lastInsertRowid);
   if (o.sale_type === "auction") {
     // Bidding closes before the event may start, or after auction_days.
     let ends = now + o.auction_days * DAY;
     if (earliest && earliest - 6 * 60 * MIN > now) ends = Math.min(ends, earliest - 60 * MIN);
-    run(
+    await run(
       `INSERT INTO auctions(moment_id, start_cents, step_cents, starts_at, ends_at, status, created_at)
        VALUES (?, ?, ?, ?, ?, 'active', ?)`,
       momentId, o.price_cents, o.auction_step_cents, now, ends, now,
@@ -277,7 +270,7 @@ export function openNextMoment(
 }
 
 /** Moments the monitor must watch right now. */
-export function monitoredMoments(now = Date.now()): MomentView[] {
+export async function monitoredMoments(now = Date.now()): Promise<MomentView[]> {
   return queryMoments(
     `(m.status IN ('sold', 'live')
       OR (m.status = 'on_sale' AND m.earliest_start IS NOT NULL))
@@ -287,14 +280,14 @@ export function monitoredMoments(now = Date.now()): MomentView[] {
   );
 }
 
-export function soldCount(): number {
-  return one<{ n: number }>("SELECT COUNT(*) AS n FROM orders WHERE status = 'paid'")?.n ?? 0;
+export async function soldCount(): Promise<number> {
+  return (await one<{ n: number }>("SELECT COUNT(*)::int AS n FROM orders WHERE status = 'paid'"))?.n ?? 0;
 }
 
-export function listCities(includeHidden = false): City[] {
-  return all<City>(`SELECT * FROM cities ${includeHidden ? "" : "WHERE hidden = 0"} ORDER BY name_en`);
+export async function listCities(includeHidden = false): Promise<City[]> {
+  return await all<City>(`SELECT * FROM cities ${includeHidden ? "" : "WHERE hidden = 0"} ORDER BY name_en`);
 }
 
-export function getCity(slug: string): City | undefined {
-  return one<City>("SELECT * FROM cities WHERE slug = ?", slug);
+export async function getCity(slug: string): Promise<City | undefined> {
+  return await one<City>("SELECT * FROM cities WHERE slug = ?", slug);
 }

@@ -6,9 +6,9 @@ import { usd } from "@/lib/currency";
 import { dt } from "@/lib/admin-format";
 import { closeLot, createLot } from "../../actions";
 
-export default function AuctionsAdmin() {
-  const auctions = all<Auction>("SELECT * FROM auctions ORDER BY id DESC LIMIT 100");
-  const candidates = queryMoments("m.status = 'on_sale' ORDER BY m.id DESC");
+export default async function AuctionsAdmin() {
+  const auctions = await all<Auction>("SELECT * FROM auctions ORDER BY id DESC LIMIT 100");
+  const candidates = await queryMoments("m.status = 'on_sale' ORDER BY m.id DESC");
   return (
     <div className="stack">
       <h1 style={{ fontSize: "2rem" }}>Auctions</h1>
@@ -41,9 +41,9 @@ export default function AuctionsAdmin() {
             </tr>
           </thead>
           <tbody>
-            {auctions.map((a) => {
-              const m = getMoment(a.moment_id)!;
-              const bids = bidsFor(a.id);
+            {auctions.map(async (a) => {
+              const m = (await getMoment(a.moment_id))!;
+              const bids = await bidsFor(a.id);
               return (
                 <tr key={a.id}>
                   <td>{a.id}</td>

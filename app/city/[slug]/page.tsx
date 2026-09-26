@@ -14,7 +14,7 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const { lang, t } = await getDict();
-  const city = getCity(slug);
+  const city = await getCity(slug);
   if (!city) return {};
   return { title: cityName(city, lang), description: `${cityName(city, lang)}: ${t.city.available}` };
 }
@@ -23,11 +23,11 @@ export default async function CityPage({ params }: Props) {
   const { slug } = await params;
   const { lang, t } = await getDict();
   const currency = await getCurrency();
-  const city = getCity(slug);
+  const city = await getCity(slug);
   if (!city || city.hidden) notFound();
   const [now, days] = await Promise.all([currentWeather(city), forecast(city)]);
-  const available = queryMoments("m.city_id = ? AND m.status = 'on_sale' ORDER BY m.price_cents", city.id);
-  const history = queryMoments(
+  const available = await queryMoments("m.city_id = ? AND m.status = 'on_sale' ORDER BY m.price_cents", city.id);
+  const history = await queryMoments(
     "m.city_id = ? AND m.status IN ('completed', 'live', 'sold') ORDER BY COALESCE(m.started_at, m.created_at) DESC LIMIT 20",
     city.id,
   );

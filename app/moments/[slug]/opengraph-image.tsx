@@ -8,7 +8,7 @@ export const alt = "Moment";
 
 export default async function Image({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const m = currentMomentOfSeries(slug);
+  const m = await currentMomentOfSeries(slug);
   if (!m) return new Response("Not found", { status: 404 });
   return momentImage({
     kind: m.type.kind,

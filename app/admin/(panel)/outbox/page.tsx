@@ -2,8 +2,8 @@ import { all } from "@/lib/db";
 import { dt } from "@/lib/admin-format";
 import { testEmail } from "../../actions";
 
-export default function Outbox() {
-  const rows = all<{ id: number; channel: string; recipient: string; subject: string | null; body: string; kind: string; status: string; error: string | null; created_at: number }>(
+export default async function Outbox() {
+  const rows = await all<{ id: number; channel: string; recipient: string; subject: string | null; body: string; kind: string; status: string; error: string | null; created_at: number }>(
     "SELECT * FROM notifications ORDER BY id DESC LIMIT 200",
   );
   return (

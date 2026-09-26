@@ -22,17 +22,17 @@ interface Row {
 
 export default async function EventsAdmin({ searchParams }: { searchParams: Promise<{ city?: string }> }) {
   const { city } = await searchParams;
-  const cities = listCities(true);
-  const disputed = all<Row>(
+  const cities = await listCities(true);
+  const disputed = await all<Row>(
     `SELECT m.*, c.name_en AS city FROM measurements m JOIN cities c ON c.id = m.city_id
      WHERE m.disputed = 1 AND m.resolution IS NULL ORDER BY m.taken_at DESC LIMIT 50`,
   );
-  const log = all<Row>(
+  const log = await all<Row>(
     `SELECT m.*, c.name_en AS city FROM measurements m JOIN cities c ON c.id = m.city_id
      ${city ? "WHERE c.slug = ?" : ""} ORDER BY m.taken_at DESC LIMIT 300`,
     ...(city ? [city] : []),
   );
-  const live = all<{ id: number; label: string }>(
+  const live = await all<{ id: number; label: string }>(
     `SELECT m.id, t.name_en || ' · ' || c.name_en AS label FROM moments m JOIN cities c ON c.id = m.city_id
      JOIN event_types t ON t.id = m.event_type_id WHERE m.status IN ('live', 'completed') ORDER BY m.id DESC LIMIT 30`,
   );

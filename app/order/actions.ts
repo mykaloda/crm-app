@@ -6,9 +6,9 @@ import { flushNotifications } from "@/lib/notify";
 
 export async function sendNow(form: FormData) {
   const id = String(form.get("order"));
-  const order = getOrder(id);
+  const order = await getOrder(id);
   if (!order || order.status !== "paid") return;
-  sendGift(id);
+  await sendGift(id);
   await flushNotifications();
   revalidatePath(`/order/${id}`);
 }

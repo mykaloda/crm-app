@@ -25,7 +25,7 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const { lang, t } = await getDict();
-  const m = currentMomentOfSeries(slug);
+  const m = await currentMomentOfSeries(slug);
   if (!m) return {};
   const title = momentTitle(m, lang);
   return { title, description: `${title}. ${t.moment.get[0]}`, alternates: { canonical: `/moments/${slug}` } };
@@ -35,12 +35,12 @@ export default async function MomentPage({ params }: Props) {
   const { slug } = await params;
   const { lang, t } = await getDict();
   const currency = await getCurrency();
-  const m = currentMomentOfSeries(slug);
+  const m = await currentMomentOfSeries(slug);
   if (!m) notFound();
   const status = availability(m);
   const title = momentTitle(m, lang);
-  const auction = m.sale_type === "auction" ? auctionForMoment(m.id) : undefined;
-  const others = queryMoments(
+  const auction = m.sale_type === "auction" ? (await auctionForMoment(m.id)) : undefined;
+  const others = await queryMoments(
     "m.event_type_id = ? AND m.status = 'on_sale' AND m.id != ? AND c.hidden = 0 ORDER BY m.price_cents LIMIT 3",
     m.event_type_id,
     m.id,

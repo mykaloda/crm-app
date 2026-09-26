@@ -12,7 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HowItWorks() {
   const { lang, t } = await getDict();
-  const types = eventTypes();
+  const types = await eventTypes();
   const ru = lang === "ru";
   return (
     <div className="container section">

@@ -17,9 +17,9 @@ export const metadata: Metadata = { title: "Order", robots: { index: false } };
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { lang, t } = await getDict();
-  const order = getOrder(id);
+  const order = await getOrder(id);
   if (!order) notFound();
-  const m = getMoment(order.moment_id)!;
+  const m = (await getMoment(order.moment_id))!;
   const title = momentTitle(m, lang);
   const recipientUrl = `${siteUrl()}/m/${order.token}`;
 

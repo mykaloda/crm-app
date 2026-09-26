@@ -21,15 +21,15 @@ export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ token: string }> };
 
-function load(token: string) {
-  const order = getOrderByToken(token);
+async function load(token: string) {
+  const order = await getOrderByToken(token);
   if (!order || (order.status !== "paid" && order.status !== "refunded")) return null;
-  return { order, moment: getMoment(order.moment_id)! };
+  return { order, moment: (await getMoment(order.moment_id))! };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;
-  const data = load(token);
+  const data = await load(token);
   if (!data) return { robots: { index: false } };
   const title = `${momentTitle(data.moment, data.order.lang)} · ${data.order.recipient_name}`;
   return {
@@ -51,7 +51,7 @@ interface M {
 
 export default async function RecipientPage({ params }: Props) {
   const { token } = await params;
-  const data = load(token);
+  const data = await load(token);
   if (!data) notFound();
   const { order, moment } = data;
   // The recipient sees the page in the language the gift was bought in.
@@ -65,7 +65,7 @@ export default async function RecipientPage({ params }: Props) {
       </div>
     );
   }
-  if (!order.opened_at) run("UPDATE orders SET opened_at = ? WHERE id = ?", Date.now(), order.id);
+  if (!order.opened_at) await run("UPDATE orders SET opened_at = ? WHERE id = ?", Date.now(), order.id);
 
   const state = moment.status === "live" ? "live" : moment.status === "completed" ? "archive" : "waiting";
   return (
@@ -127,15 +127,15 @@ async function Waiting({ m, t, lang }: Part) {
   );
 }
 
-function latest(m: MomentView) {
-  return all<M>(
+async function latest(m: MomentView) {
+  return (await all<M>(
     "SELECT * FROM measurements WHERE moment_id = ? AND note IS NULL ORDER BY taken_at DESC LIMIT 1",
     m.id,
-  )[0];
+  ))[0];
 }
 
-function Live({ order, m, t, lang }: Part) {
-  const last = latest(m);
+async function Live({ order, m, t, lang }: Part) {
+  const last = await latest(m);
   const unit = lang === "ru" ? "мм/ч" : "mm/h";
   return (
     <>
@@ -170,8 +170,8 @@ function Live({ order, m, t, lang }: Part) {
   );
 }
 
-function Archive({ order, m, t, lang }: Part) {
-  const log = all<M>("SELECT * FROM measurements WHERE moment_id = ? ORDER BY taken_at DESC LIMIT 500", m.id);
+async function Archive({ order, m, t, lang }: Part) {
+  const log = await all<M>("SELECT * FROM measurements WHERE moment_id = ? ORDER BY taken_at DESC LIMIT 500", m.id);
   const title = momentTitle(m, lang);
   const astro = m.type.kind === "sunrise" || m.type.kind === "meteor";
   return (

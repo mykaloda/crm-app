@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const { lang, t } = await getDict();
   const currency = await getCurrency();
-  const showcase = queryMoments(
+  const showcase = await queryMoments(
     "m.status = 'on_sale' AND c.hidden = 0 ORDER BY m.sale_type = 'auction', m.price_cents LIMIT 6",
   );
-  const sold = soldCount();
-  const reviews = all<{ id: number; author: string; text_en: string; text_ru: string }>(
+  const sold = await soldCount();
+  const reviews = await all<{ id: number; author: string; text_en: string; text_ru: string }>(
     "SELECT * FROM reviews WHERE visible = 1 ORDER BY created_at DESC LIMIT 6",
   );
 

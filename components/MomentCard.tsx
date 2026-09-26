@@ -7,11 +7,11 @@ import { Sky } from "./Sky";
 import { Price } from "./Price";
 import { StatusBadge } from "./StatusBadge";
 
-export function MomentCard({ m, lang, t, currency }: { m: MomentView; lang: Lang; t: Dict; currency: Currency }) {
+export async function MomentCard({ m, lang, t, currency }: { m: MomentView; lang: Lang; t: Dict; currency: Currency }) {
   const status = availability(m);
-  const auction = m.sale_type === "auction" ? auctionForMoment(m.id) : undefined;
+  const auction = m.sale_type === "auction" ? (await auctionForMoment(m.id)) : undefined;
   const href = auction && status === "auction" ? `/auction/${auction.id}` : momentPath(m);
-  const priceCents = auction && auction.status === "active" ? minNextBid(auction) : m.price_cents;
+  const priceCents = auction && auction.status === "active" ? (await minNextBid(auction)) : m.price_cents;
   return (
     <Link href={href} className="card">
       <div className="card-art">

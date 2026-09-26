@@ -1,8 +1,8 @@
 import { eventTypes } from "@/lib/moments";
 import { saveType } from "../../actions";
 
-export default function TypesAdmin() {
-  const types = eventTypes();
+export default async function TypesAdmin() {
+  const types = await eventTypes();
   return (
     <div className="stack">
       <h1 style={{ fontSize: "2rem" }}>Event types</h1>
