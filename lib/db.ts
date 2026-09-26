@@ -267,7 +267,8 @@ async function connectServer(url: string): Promise<Conn> {
 
 async function connectEmbedded(): Promise<Conn> {
   const { PGlite } = await import("@electric-sql/pglite");
-  const dir = process.env.PGLITE_DIR || path.join(process.cwd(), "data", "pg");
+  // Serverless file systems are read-only except /tmp (demo mode without DATABASE_URL).
+  const dir = process.env.PGLITE_DIR || (process.env.VERCEL ? "/tmp/moment-pg" : path.join(process.cwd(), "data", "pg"));
   fs.mkdirSync(path.dirname(dir), { recursive: true });
   const pg = await PGlite.create(dir);
   type Q = Pick<typeof pg, "query" | "exec">;
@@ -292,7 +293,7 @@ const txStore = new AsyncLocalStorage<Conn>();
 async function init(): Promise<Conn> {
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (!url && process.env.VERCEL) {
-    throw new Error("DATABASE_URL is not set. Add a Postgres database (Neon / Supabase) to the Vercel project.");
+    console.warn("[db] DATABASE_URL is not set: using a temporary embedded database in /tmp (demo only, data is not kept).");
   }
   const conn = url ? await connectServer(url) : await connectEmbedded();
   await conn.exec(SCHEMA);
@@ -342,6 +343,11 @@ export async function tx<T>(fn: () => Promise<T>): Promise<T> {
   if (current) return fn();
   const c = await conn();
   return c.transaction((t) => txStore.run(t, fn));
+}
+
+/** True when running on serverless hosting without a persistent database. */
+export function temporaryDatabase() {
+  return Boolean(process.env.VERCEL) && !(process.env.DATABASE_URL || process.env.POSTGRES_URL);
 }
 
 export async function kvGet(key: string): Promise<string | undefined> {
