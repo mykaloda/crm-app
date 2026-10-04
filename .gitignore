@@ -1,0 +1,4 @@
+# CRM data pulled by crm-sync: client data, never commit it
+crm-sync/data/
+crm-sync/plan.draft.json
+__pycache__/
