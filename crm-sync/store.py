@@ -106,12 +106,13 @@ class Store:
 
     # --- records ---------------------------------------------------------
 
-    def apply(self, run_id, entity, records, key_field="id", complete=True, ignore=()):
+    def apply(self, run_id, entity, records, key_field="id", complete=True, ignore=(), unique=False):
         """Upsert one entity's pulled records; returns counts of new/updated/deleted/...
 
         complete=True means `records` is everything the CRM has for this entity,
         so ids that were stored before and are missing now get marked deleted.
         Fields in `ignore` don't count as a change (e.g. a computed "days ago").
+        unique=True: the key is a real id, so a repeat is a paging overlap and is skipped.
         """
         ts = utc_now()
         existing = {
@@ -122,11 +123,16 @@ class Store:
         }
         counts = Counter(pulled=0)
         seen = set()
+        occurrences = Counter()
         with self.conn:
             for record in records:
-                key = record_key(record, key_field)
-                if key in seen:
+                # Views without a unique id can hold several rows with the same key:
+                # number them (key, key#2, ...) instead of dropping any.
+                base = record_key(record, key_field)
+                if unique and base in seen:
                     continue
+                occurrences[base] += 1
+                key = base if occurrences[base] == 1 else f"{base}#{occurrences[base]}"
                 seen.add(key)
                 counts["pulled"] += 1
                 data = json.dumps(record, ensure_ascii=False, separators=(",", ":"))  # keeps the CRM's field order

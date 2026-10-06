@@ -20,8 +20,10 @@ claude.ai/code → значок облака с именем окружения 
 python3 crm-sync/sync.py discover          # что умеет сервер -> data/schema.json
 python3 crm-sync/sync.py plan              # черновик plan.json по списку инструментов
 python3 crm-sync/sync.py call TOOL '{}'    # вызвать один инструмент и посмотреть ответ
-python3 crm-sync/sync.py pull              # выгрузить всё из plan.json -> data/crm.sqlite + data/export/*.csv
+python3 crm-sync/sync.py pull              # выгрузка по расписанию: таблицы для сводки + агрегаты -> data/crm.sqlite, data/export/*.csv
+python3 crm-sync/sync.py pull --full       # полная выгрузка: ещё сырая переписка, визиты сайта и заметки
 python3 crm-sync/sync.py pull orders       # только указанные сущности
+python3 crm-sync/analytics.py              # документы сводки -> data/dashboard/summary.json, pipeline.json
 python3 crm-sync/tests/test_sync.py      # тесты на имитации сервера
 ```
 
@@ -61,3 +63,14 @@ python3 crm-sync/tests/test_sync.py      # тесты на имитации се
   только для новых и изменившихся.
 - `ignore`: поля, изменение которых не считается изменением записи.
 - `complete: false`: инструмент отдаёт не все записи, поэтому отсутствующие не помечаются удалёнными.
+
+## Сводка
+
+`dashboard.html` — страница-артефакт «Сводка Lerega Upholstery»
+(https://claude.ai/artifact/WUziqN8zdPuAchtY9nMSxH). Сама страница данных не содержит: она читает
+документы `dashboard/summary` и `dashboard/pipeline` из своего хранилища. После `analytics.py`
+их записывают туда инструментом ArtifactData (set с `file_path`). На страницу попадают только
+агрегаты и номера заказов, без имён, адресов, сообщений и заметок.
+
+Переписка и визиты сайта для сводки считаются на сервере CRM (сущности `agg_*` в `plan.json`),
+поэтому регулярной выгрузке хватает ~35 запросов. Сырые таблицы (`full_only`) выгружаются только с `--full`.

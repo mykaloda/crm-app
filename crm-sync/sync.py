@@ -4,7 +4,8 @@
     python3 crm-sync/sync.py discover        what the server offers -> data/schema.json
     python3 crm-sync/sync.py plan            draft plan.json from the discovered tools
     python3 crm-sync/sync.py call TOOL '{}'  run one tool, print its result
-    python3 crm-sync/sync.py pull            pull every entity in plan.json -> data/crm.sqlite
+    python3 crm-sync/sync.py pull            pull plan.json's entities -> data/crm.sqlite
+    python3 crm-sync/sync.py pull --full     also the big raw tables marked full_only
     python3 crm-sync/sync.py export          one CSV per entity -> data/export/
 
 Environment: LEREGA_CRM_KEY (unless an API credential on the environment adds it),
@@ -16,6 +17,7 @@ import json
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 from mcp_client import AuthError, McpClient, McpError, NetworkBlocked
@@ -163,9 +165,17 @@ def fetch_tool(client, spec):
 
 
 def fetch_sql(client, plan, spec):
-    """All rows of a SELECT, in LIMIT/OFFSET pages, until an empty page."""
+    """All rows of a SELECT, in LIMIT/OFFSET pages, until an empty page.
+
+    The page size follows the row size, so a page stays under the server's cap on
+    result length; a page the server cut anyway is asked again at half the size.
+    """
     tool = plan["sql_tool"]
-    size = spec.get("page_size", 500)
+    max_size = spec.get("page_size", 500)
+    budget = tool.get("max_chars", 150_000) * 0.7
+    cut_marker = tool.get("cut_marker", "[Result cut at")
+    row_cap = tool.get("row_cap")  # the server never returns more rows than this
+    size = max_size
     key = spec.get("key", "id")
     order = spec.get("order_by") or (", ".join(key) if isinstance(key, list) else key)
     records = []
@@ -173,11 +183,23 @@ def fetch_sql(client, plan, spec):
         sql = f"SELECT * FROM ({spec['sql']}) AS t"
         sql += f" ORDER BY {order}" if order else ""
         sql += f" LIMIT {size} OFFSET {len(records)}"
+        time.sleep(tool.get("delay", 0))
         result = client.call_tool(tool["name"], {**(tool.get("args") or {}), tool["arg"]: sql})
+        if isinstance(result, str) and cut_marker in result:
+            if size == 1:
+                raise ShapeError(f"the row at offset {len(records)} alone is over the server's result limit")
+            size = max(1, size // 2)
+            continue
         rows = extract_items(result, tool.get("items"), spec["name"], key)
         if not rows:
             return records
         records += rows
+        if row_cap and size <= row_cap and len(rows) < size:
+            return records  # a short, uncut page is the last one
+        if len(records) // 5000 != (len(records) - len(rows)) // 5000:
+            log(f"  {len(records)} rows ...")
+        per_row = len(json.dumps(rows, ensure_ascii=False, separators=(",", ":"))) / len(rows)
+        size = max(1, min(max_size, int(budget / per_row)))
 
 
 def fetch_for_each(client, store, spec, run_id):
@@ -280,7 +302,8 @@ def cmd_call(args):
 
 def cmd_pull(args):
     plan = json.loads(plan_path().read_text())
-    only = set(args)
+    full = "--full" in args
+    only = {a for a in args if a != "--full"}
     client = connect()
     out = data_dir()
     (out / "raw").mkdir(parents=True, exist_ok=True)
@@ -289,7 +312,7 @@ def cmd_pull(args):
     summary, failed = {}, []
     for spec in plan["entities"]:
         name = spec["name"]
-        if only and name not in only:
+        if (only and name not in only) or (spec.get("full_only") and not full and name not in only):
             continue
         log(f"{name} ...")
         try:
@@ -309,7 +332,8 @@ def cmd_pull(args):
             continue
         (out / "raw" / f"{name}.json").write_text(json.dumps(records, ensure_ascii=False, indent=1))
         complete = spec.get("complete", not spec.get("for_each", {}).get("changed_only"))
-        counts = store.apply(run_id, name, records, spec.get("key", "id"), complete, spec.get("ignore", ()))
+        counts = store.apply(run_id, name, records, spec.get("key", "id"), complete, spec.get("ignore", ()),
+                             spec.get("unique", False))
         summary[name] = counts
         log("  " + ", ".join(f"{k} {v}" for k, v in counts.items()))
     status = "ok" if not failed else "partial" if len(failed) < len(summary) else "failed"

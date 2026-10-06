@@ -1,0 +1,624 @@
+<title>Сводка Lerega Upholstery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column on phones; from 820px a two-column grid. Order follows urgency:
+   numbers, what needs action, the board now, then the analysis. Type and orange
+   accent follow the Lerega CRM itself. */
+:root {
+  --bg: #f5f4f2;
+  --surface: #ffffff;
+  --ink: #181715;
+  --ink-2: #57534d;
+  --muted: #8a857d;
+  --hair: #e8e5e0;
+  --axis: #cfcac3;
+  --accent: #df5f2b;
+  --accent-wash: #fcebe2;
+  --open: #bdb7af;
+  --lost: #87827a;
+  --good: #1f7a36;
+  --bad: #b3352f;
+  --warn: #9a6512;
+  --warn-wash: #fbf0dc;
+  --bad-wash: #fbe7e5;
+  --chip: #f0eeea;
+  --shadow: 0 1px 2px rgba(24, 23, 21, 0.06);
+  --font: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121110; --surface: #1c1b19; --ink: #f3f1ed; --ink-2: #c5c0b8; --muted: #908a82;
+    --hair: #2d2b28; --axis: #403d39; --accent: #f0743f; --accent-wash: #3b2318;
+    --open: #57534d; --lost: #8d8880; --good: #55c472; --bad: #f08079; --warn: #e2a84e;
+    --warn-wash: #33291a; --bad-wash: #3a201e; --chip: #2a2825; --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121110; --surface: #1c1b19; --ink: #f3f1ed; --ink-2: #c5c0b8; --muted: #908a82;
+  --hair: #2d2b28; --axis: #403d39; --accent: #f0743f; --accent-wash: #3b2318;
+  --open: #57534d; --lost: #8d8880; --good: #55c472; --bad: #f08079; --warn: #e2a84e;
+  --warn-wash: #33291a; --bad-wash: #3a201e; --chip: #2a2825; --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--font); }
+.page { max-width: 1160px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 17px; font-weight: 600; }
+h3 { font-size: 14px; font-weight: 600; }
+p { margin: 0; }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; justify-content: space-between; padding-block: 4px 18px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.logo { flex: none; width: 36px; height: 36px; border-radius: 8px; background: var(--ink); color: var(--bg);
+  display: grid; place-items: center; font: 600 13px/1 var(--mono); }
+.sub { color: var(--ink-2); font-size: 13px; }
+.stack { display: grid; gap: 16px; }
+.grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 820px) { .grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r); box-shadow: var(--shadow);
+  padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.note { color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.section-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-block: 12px 0; }
+.section-title h2 { font-size: 19px; }
+
+/* KPI tiles */
+.kpis { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 820px) { .kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.kpi { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--r); padding: 14px; display: grid; gap: 4px; align-content: start; min-width: 0; box-shadow: var(--shadow); }
+.kpi .label { color: var(--ink-2); font-size: 13px; }
+.kpi .value { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.kpi .delta { font-size: 12.5px; color: var(--muted); }
+.kpi.lead { grid-column: 1 / -1; }
+@media (min-width: 820px) { .kpi.lead { grid-column: auto; } }
+.up { color: var(--good); } .down { color: var(--bad); }
+
+/* chips, pills */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 13px/1 var(--font); border: 1px solid var(--hair); background: var(--chip); color: var(--ink);
+  border-radius: 999px; padding: 7px 11px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chip b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.chip:focus-visible, .seg button:focus-visible, .more:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+.pill.warn { background: var(--warn-wash); color: var(--warn); }
+.pill.bad { background: var(--bad-wash); color: var(--bad); }
+.pill.plain { background: var(--chip); color: var(--ink-2); }
+.seg { display: inline-flex; border: 1px solid var(--hair); border-radius: 9px; padding: 3px; background: var(--surface); gap: 2px; }
+.seg button { font: 500 13px/1 var(--font); border: 0; background: transparent; color: var(--ink-2); padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.more { font: 500 13px/1 var(--font); background: none; border: 0; color: var(--accent); padding: 6px 0; cursor: pointer; justify-self: start; }
+
+/* lists */
+.rows { display: grid; }
+.row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; padding-block: 10px; border-top: 1px solid var(--hair); align-items: baseline; }
+.row:first-child { border-top: 0; }
+.no { font: 500 13px/1.4 var(--mono); color: var(--ink); white-space: nowrap; }
+.row .what { min-width: 0; display: grid; gap: 2px; }
+.row .what .t { font-weight: 500; }
+.row .what .d { color: var(--ink-2); font-size: 13px; overflow-wrap: anywhere; }
+.row .num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 13px; white-space: nowrap; }
+.day { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding-block: 12px 2px; }
+.day:first-child { padding-top: 0; }
+
+/* tables */
+.scroll { overflow-x: auto; margin-inline: -4px; padding-inline: 4px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 0 8px 8px 0; white-space: nowrap; }
+td { padding: 8px 8px 8px 0; border-top: 1px solid var(--hair); vertical-align: middle; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.name { min-width: 120px; }
+.track { position: relative; height: 10px; min-width: 72px; background: transparent; }
+.track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 3px 3px 0; }
+.track i.all { background: var(--open); }
+.track i.won { background: var(--accent); }
+
+/* funnel & horizontal bars */
+.hbars { display: grid; gap: 10px; }
+.hbar { display: grid; gap: 4px; }
+.hbar .lab { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+.hbar .lab span:last-child { font-variant-numeric: tabular-nums; color: var(--ink-2); white-space: nowrap; }
+.hbar .bar { height: 14px; }
+.hbar .bar i { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; }
+.hbar.gray .bar i { background: var(--lost); }
+
+/* charts */
+.chart { width: 100%; min-width: 0; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font: 400 11px var(--font); fill: var(--muted); }
+.chart .grid-l { stroke: var(--hair); stroke-width: 1; }
+.chart .base { stroke: var(--axis); stroke-width: 1; }
+.chart .mark { cursor: default; }
+.chart .mark:hover, .chart .mark:focus { opacity: 0.82; outline: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+details.tv summary { cursor: pointer; color: var(--ink-2); font-size: 13px; }
+details.tv[open] summary { margin-bottom: 8px; }
+.mini { display: inline-flex; align-items: flex-end; gap: 2px; height: 22px; vertical-align: middle; }
+.mini i { width: 7px; background: var(--accent); border-radius: 2px 2px 0 0; min-height: 1px; }
+.mini i.z { background: var(--hair); }
+.speed { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.speed div { display: grid; gap: 2px; }
+.speed b { font-size: 22px; font-weight: 600; }
+.pending { display: grid; gap: 6px; padding: 18px; border: 1px dashed var(--axis); border-radius: var(--r); color: var(--ink-2); }
+.empty { padding: 40px 18px; text-align: center; color: var(--ink-2); display: grid; gap: 8px; justify-items: center; }
+.tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--surface); border-radius: 8px;
+  padding: 8px 10px; font-size: 12.5px; line-height: 1.45; max-width: 260px; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+.tip .tt { color: var(--surface); opacity: 0.75; margin-bottom: 2px; }
+.tip .tv { display: flex; align-items: center; gap: 8px; }
+.tip .tv i { width: 10px; height: 2px; display: inline-block; }
+.tip .tv b { font-weight: 600; font-variant-numeric: tabular-nums; }
+footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
+@media (prefers-reduced-motion: no-preference) { .card, .kpi { transition: opacity 0.2s; } }
+.stale { opacity: 0.55; }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">LU</div>
+      <div>
+        <h1>Сводка Lerega Upholstery</h1>
+        <p class="sub" id="updated">Заявки, деньги и то, что ждёт действия, по данным CRM</p>
+      </div>
+    </div>
+  </header>
+  <main id="app">
+    <div class="card empty">
+      <h2>Сводка появится здесь</h2>
+      <p>Как только придут данные из CRM: заявки и конверсия, поступления, заказы в работе и список того, что требует внимания. Данные обновляются три раза в день.</p>
+    </div>
+  </main>
+  <footer>Данные Lerega CRM, доступ только на чтение. Без телефонов, почты и имён клиентов: заказы по номерам.</footer>
+</div>
+<div id="tip" class="tip" role="tooltip" hidden></div>
+
+<script>
+(() => {
+  const TZ = "America/Chicago";
+  const S = { summary: null, pipeline: null, period: "90", reason: "all", showAll: {} };
+  try { S.period = localStorage.getItem("lerega.period") || "90"; } catch (e) {}
+
+  const nf = new Intl.NumberFormat("en-US");
+  const num = (n) => (n == null ? "—" : nf.format(Math.round(n)));
+  const money = (n) => (n == null ? "—" : (n < 0 ? "−$" : "$") + nf.format(Math.round(Math.abs(n))));
+  const moneyShort = (n) => {
+    if (n == null) return "—";
+    const a = Math.abs(n);
+    if (a >= 1e6) return "$" + (n / 1e6).toFixed(1) + "M";
+    if (a >= 1e4) return "$" + Math.round(n / 1e3) + "K";
+    if (a >= 1e3) return "$" + String(+(n / 1e3).toFixed(1)) + "K";
+    return "$" + Math.round(n);
+  };
+  const pct = (r) => (r == null ? "—" : (r * 100).toFixed(r > 0 && r < 0.1 ? 1 : 0) + "%");
+  const plural = (n, one, few, many) => {
+    const m10 = n % 10, m100 = n % 100;
+    return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+  };
+  const days = (n) => n == null ? "—" : n + " " + plural(n, "день", "дня", "дней");
+  const fmtDate = (iso, opts) => {
+    if (!iso) return "—";
+    const d = iso.length <= 10 ? new Date(iso + "T12:00:00Z") : new Date(iso);
+    return new Intl.DateTimeFormat("ru-RU", { timeZone: iso.length <= 10 ? "UTC" : TZ, ...opts }).format(d);
+  };
+  const dayKey = (iso) => new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(iso));
+  const timeOf = (iso) => fmtDate(iso, { hour: "2-digit", minute: "2-digit" });
+  const shortDate = (iso) => fmtDate(iso, { day: "numeric", month: "short" }).replace(".", "");
+
+  function h(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (v == null || v === false) continue;
+      if (k === "class") e.className = v;
+      else if (k === "style") e.style.cssText = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? "" : v);
+    }
+    for (const kid of kids.flat()) {
+      if (kid == null || kid === false) continue;
+      e.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    }
+    return e;
+  }
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function s(tag, attrs) {
+    const e = document.createElementNS(SVGNS, tag);
+    for (const [k, v] of Object.entries(attrs || {})) if (v != null) e.setAttribute(k, v);
+    return e;
+  }
+
+  // One tooltip for every chart: values first, labels second.
+  const tip = document.getElementById("tip");
+  function showTip(x, y, title, lines) {
+    tip.replaceChildren(h("div", { class: "tt" }, title),
+      ...lines.map(([color, label, value]) => h("div", { class: "tv" },
+        color ? h("i", { style: "background:" + color }) : null, h("b", {}, value), label)));
+    tip.hidden = false;
+    const r = tip.getBoundingClientRect();
+    const left = Math.min(window.innerWidth - r.width - 8, Math.max(8, x + 12));
+    const top = y - r.height - 12 < 8 ? y + 16 : y - r.height - 12;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+  function hideTip() { tip.hidden = true; }
+  function bindTip(node, title, lines) {
+    node.setAttribute("tabindex", "0");
+    node.classList.add("mark");
+    node.setAttribute("aria-label", title + ": " + lines.map((l) => l[2] + " " + l[1]).join(", "));
+    node.addEventListener("pointermove", (e) => showTip(e.clientX, e.clientY, title, lines));
+    node.addEventListener("pointerleave", hideTip);
+    node.addEventListener("focus", () => { const r = node.getBoundingClientRect(); showTip(r.left + r.width / 2, r.top, title, lines); });
+    node.addEventListener("blur", hideTip);
+  }
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  function niceScale(v, count = 4) {
+    if (v <= 0) return { max: count, step: 1 };
+    const raw = v / count, p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * p).find((x) => x >= raw);
+    return { max: Math.ceil(v / step - 1e-9) * step, step };
+  }
+  function colPath(x, y, w, hgt, r) {
+    r = Math.min(r, w / 2, hgt);
+    if (hgt <= 0) return "";
+    return `M${x},${y + hgt}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + hgt}Z`;
+  }
+
+  // Columns over time; each column is a stack of segments, 2px surface gaps between them.
+  function columns(host, opts) {
+    const W = Math.max(280, host.clientWidth || 600), H = opts.height || 200;
+    const padL = 36, padB = 22, padT = 18, plotW = W - padL - 4, plotH = H - padB - padT;
+    const n = opts.data.length;
+    const { max, step } = niceScale(Math.max(...opts.data.map(opts.total), 1));
+    const band = plotW / n, bw = Math.min(24, Math.max(3, band * 0.68));
+    const svg = s("svg", { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.label });
+    for (let v = 0; v <= max + 1e-9; v += step) {
+      const y = padT + plotH - (v / max) * plotH;
+      svg.append(s("line", { x1: padL, x2: W - 4, y1: y, y2: y, class: v ? "grid-l" : "base" }));
+      const t = s("text", { x: padL - 6, y: y + 4, "text-anchor": "end" });
+      t.textContent = opts.tick(v);
+      svg.append(t);
+    }
+    opts.data.forEach((d, i) => {
+      const x = padL + band * i + (band - bw) / 2;
+      let y = padT + plotH;
+      const g = s("g", {});
+      const segs = opts.series.map((ser) => ({ ser, v: ser.value(d) })).filter((p) => p.v > 0);
+      segs.forEach((p, j) => {
+        const hgt = (p.v / max) * plotH;
+        const top = j === segs.length - 1;
+        const gap = j > 0 ? 2 : 0;
+        const y0 = y - hgt;
+        const shape = top ? s("path", { d: colPath(x, y0, bw, hgt - gap, 3), fill: css(p.ser.color) })
+          : s("rect", { x, y: y0, width: bw, height: Math.max(0, hgt - gap), fill: css(p.ser.color) });
+        if (p.ser.opacity) shape.setAttribute("opacity", p.ser.opacity(d));
+        g.append(shape);
+        y = y0;
+      });
+      g.append(s("rect", { x: padL + band * i, y: padT, width: band, height: plotH, fill: "transparent" }));
+      bindTip(g, opts.title(d), opts.series.map((ser) => [css(ser.color), ser.name, opts.fmt(ser.value(d))]).concat(opts.extra ? opts.extra(d) : []));
+      svg.append(g);
+      if (opts.xLabel(d, i)) {
+        const t = s("text", { x: padL + band * i + band / 2, y: H - 6, "text-anchor": "middle" });
+        t.textContent = opts.xLabel(d, i);
+        svg.append(t);
+      }
+      if (opts.capLabel && opts.capLabel(d, i)) {
+        const t = s("text", { x: padL + band * i + band / 2, y: y - 5, "text-anchor": "middle", style: "fill:" + css("--ink-2") });
+        t.textContent = opts.capLabel(d, i);
+        svg.append(t);
+      }
+    });
+    host.replaceChildren(svg);
+  }
+
+  function legend(items) {
+    return h("div", { class: "legend" }, items.map(([color, label]) => h("span", {}, h("i", { style: `background:var(${color})` }), label)));
+  }
+  function tableView(head, rows) {
+    return h("details", { class: "tv" }, h("summary", {}, "Таблица"),
+      h("div", { class: "scroll" }, h("table", {},
+        h("thead", {}, h("tr", {}, head.map((c, i) => h("th", { class: i ? "n" : null }, c)))),
+        h("tbody", {}, rows.map((r) => h("tr", {}, r.map((c, i) => h("td", { class: i ? "n" : null }, c))))))));
+  }
+  function card(title, note, ...body) {
+    return h("section", { class: "card" }, h("div", { class: "card-head" }, h("h2", {}, title), note ? h("span", { class: "note" }, note) : null), ...body);
+  }
+  function delta(cur, prev, suffix, upIsGood = true) {
+    if (prev == null || prev === 0 || cur == null) return h("span", { class: "delta" }, suffix || "");
+    const r = (cur - prev) / prev;
+    const good = (r >= 0) === upIsGood;
+    const sign = r >= 0 ? "▲ +" : "▼ −";
+    return h("span", { class: "delta" }, h("span", { class: good ? "up" : "down" }, sign + Math.round(Math.abs(r) * 100) + "%"), " " + suffix);
+  }
+
+  // --- sections ---------------------------------------------------------
+
+  function kpis(sm) {
+    const k = sm.kpi;
+    const today = sm.today;
+    const monthName = fmtDate(today, { month: "long" });
+    const dayOfMonth = Number(today.slice(8, 10));
+    const prevMonth = new Date(today + "T12:00:00Z"); prevMonth.setUTCDate(1); prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
+    const prevName = new Intl.DateTimeFormat("ru-RU", { month: "long", timeZone: "UTC" }).format(prevMonth);
+    const prevGen = new Intl.DateTimeFormat("ru-RU", { month: "long", day: "numeric", timeZone: "UTC" }).format(prevMonth).replace(/^\d+\s/, "");
+    return h("div", { class: "kpis" },
+      h("div", { class: "kpi lead" }, h("span", { class: "label" }, "Заявки за 7 дней"), h("span", { class: "value" }, num(k.leads_7)),
+        delta(k.leads_7, k.leads_prev_7, `к прошлым 7 дням (${num(k.leads_prev_7)})`)),
+      h("div", { class: "kpi" }, h("span", { class: "label" }, "Поступило за " + monthName.replace(/^./, (c) => c.toLowerCase())), h("span", { class: "value" }, money(k.mtd)),
+        delta(k.mtd, k.prev_mtd, `к 1–${dayOfMonth} ${prevGen} (${money(k.prev_mtd)})`),
+        h("span", { class: "delta" }, `${prevName.replace(/^./, (c) => c.toUpperCase())} целиком: ${money(k.prev_month)}`)),
+      h("div", { class: "kpi" }, h("span", { class: "label" }, "Заказы в работе"), h("span", { class: "value" }, num(k.in_work)),
+        h("span", { class: "delta" }, money(k.in_work_quoted) + " по сметам")),
+      h("div", { class: "kpi" }, h("span", { class: "label" }, "Открытые заявки"), h("span", { class: "value" }, num(k.open)),
+        h("span", { class: "delta" }, `${num(k.open_fresh)} пришли за 14 дней`)),
+      h("div", { class: "kpi" }, h("span", { class: "label" }, "Конверсия за 90 дней"), h("span", { class: "value" }, pct(k.win_rate_90)),
+        h("span", { class: "delta" }, "заказов среди решённых заявок")));
+  }
+
+  function attention(sm, pl) {
+    const labels = sm.attention_labels, counts = sm.attention_counts;
+    const all = pl ? pl.attention : [];
+    const list = S.reason === "all" ? all : all.filter((r) => r.reason === S.reason);
+    const limit = S.showAll.att ? list.length : 10;
+    const chips = h("div", { class: "chips", role: "group", "aria-label": "Фильтр по причине" },
+      h("button", { class: "chip", "aria-pressed": String(S.reason === "all"), onclick: () => { S.reason = "all"; render(); } }, "Все ", h("b", {}, num(all.length))),
+      Object.keys(labels).filter((k) => counts[k]).map((k) =>
+        h("button", { class: "chip", "aria-pressed": String(S.reason === k), onclick: () => { S.reason = k; render(); } }, labels[k] + " ", h("b", {}, num(counts[k])))));
+    const severity = { deadline: "bad", appointment: "bad", client_waiting: "bad", our_move: "warn", long_in_shop: "warn", quote_silence: "plain", close_candidate: "plain" };
+    const rows = h("div", { class: "rows" }, list.slice(0, limit).map((r) => h("div", { class: "row" },
+      h("span", { class: "no" }, "#" + r.order_no),
+      h("div", { class: "what" },
+        h("span", { class: "t" }, h("span", { class: "pill " + severity[r.reason] }, (severity[r.reason] === "bad" ? "! " : "") + labels[r.reason]), " ", r.detail || ""),
+        h("span", { class: "d" }, [r.stage, r.work_types, r.item].filter(Boolean).join(" · "))),
+      h("span", { class: "num" }, (r.days_in_stage != null ? days(r.days_in_stage) + " в стадии" : ""), r.quote ? h("br") : null, r.quote ? money(r.quote) : null))));
+    return card("Требует внимания", "по правилам: сроки, выезды, ход за нами, тишина после сметы",
+      chips, list.length ? rows : h("p", { class: "note" }, "Ничего не ждёт действия."),
+      list.length > limit ? h("button", { class: "more", onclick: () => { S.showAll.att = true; render(); } }, `Показать все (${list.length})`) : null);
+  }
+
+  function upcoming(pl) {
+    const items = pl ? pl.upcoming : [];
+    if (!items.length) return card("Выезды", "сегодня и 14 дней вперёд", h("p", { class: "note" }, "Запланированных выездов нет."));
+    const todayKey = dayKey(new Date().toISOString());
+    const tomorrowKey = dayKey(new Date(Date.now() + 864e5).toISOString());
+    const groups = new Map();
+    for (const a of items) {
+      const key = dayKey(a.at);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(a);
+    }
+    const limit = S.showAll.appt ? Infinity : 8;
+    let shown = 0;
+    const body = h("div", { class: "rows" });
+    for (const [key, list] of groups) {
+      if (shown >= limit) break;
+      const title = key === todayKey ? "Сегодня" : key === tomorrowKey ? "Завтра" : fmtDate(list[0].at, { weekday: "short", day: "numeric", month: "short" });
+      body.append(h("div", { class: "day" }, title));
+      for (const a of list.slice(0, limit - shown)) body.append(h("div", { class: "row" },
+        h("span", { class: "no" }, timeOf(a.at)),
+        h("div", { class: "what" }, h("span", { class: "t" }, typeName(a.type), " · #" + a.order_no), h("span", { class: "d" }, [a.work_types, a.item, a.stage].filter(Boolean).join(" · "))),
+        h("span", { class: "num" }, a.executor || "")));
+      shown += Math.min(list.length, limit - shown);
+    }
+    return card("Выезды", "сегодня и 14 дней вперёд, время Остина", body,
+      items.length > shown ? h("button", { class: "more", onclick: () => { S.showAll.appt = true; render(); } }, `Все выезды (${items.length})`) : null);
+  }
+  const typeName = (t) => ({ Pickup: "Забрать", Delivery: "Доставка", "Craftsman visit": "Выезд мастера", "Customer visit": "Визит клиента" }[t] || t);
+
+  function stagesNow(sm) {
+    const rows = sm.stages;
+    const max = Math.max(...rows.map((r) => r.n), 1);
+    return card("Доска сейчас", "открытые заявки и заказы в работе",
+      h("div", { class: "scroll" }, h("table", {},
+        h("thead", {}, h("tr", {}, h("th", {}, "Стадия"), h("th", {}, ""), h("th", { class: "n" }, "Шт."), h("th", { class: "n" }, "По сметам"), h("th", { class: "n" }, "Медиана"), h("th", {}, "Зависли"))),
+        h("tbody", {}, rows.map((r) => h("tr", {},
+          h("td", { class: "name" }, r.stage),
+          h("td", { style: "width:22%" }, h("div", { class: "track" }, h("i", { class: r.status === "open" ? "all" : "won", style: `width:${(r.n / max) * 100}%` }))),
+          h("td", { class: "n" }, num(r.n)),
+          h("td", { class: "n" }, moneyShort(r.quoted)),
+          h("td", { class: "n" }, r.median_days == null ? "—" : Math.round(r.median_days) + " дн"),
+          h("td", {}, r.stuck ? h("span", { class: "pill warn", title: `дольше ${r.stuck_after} дней в стадии` }, `! ${r.stuck} > ${r.stuck_after} дн`) : h("span", { class: "note" }, "—"))))))),
+      legend([["--open", "Заявки (ещё не заказ)"], ["--accent", "Заказы в работе"]]));
+  }
+
+  function weeklyCard(sm) {
+    const host = h("div", { class: "chart" });
+    const series = [
+      { name: "стали заказом", color: "--accent", value: (d) => d.won },
+      { name: "ещё открыты", color: "--open", value: (d) => d.open },
+      { name: "не состоялись", color: "--lost", value: (d) => d.lost },
+    ];
+    queueChart(host, () => columns(host, {
+      data: sm.weekly, series, label: "Заявки по неделям", height: 210,
+      total: (d) => d.leads, tick: (v) => num(v), fmt: num,
+      title: (d) => "Неделя с " + shortDate(d.week) + ": " + num(d.leads) + " " + plural(d.leads, "заявка", "заявки", "заявок"),
+      xLabel: (d, i) => (i % 4 === 1 || i === sm.weekly.length - 1) ? shortDate(d.week) : "",
+    }));
+    return card("Заявки по неделям", "26 недель, по дате заявки", legend([["--accent", "Стали заказом"], ["--open", "Ещё открыты"], ["--lost", "Не состоялись"]]), host,
+      tableView(["Неделя", "Заявки", "Заказ", "Открыты", "Нет"], sm.weekly.slice().reverse().map((d) => [shortDate(d.week), num(d.leads), num(d.won), num(d.open), num(d.lost)])));
+  }
+
+  function moneyCard(sm) {
+    const host = h("div", { class: "chart" });
+    const from = sm.coverage.payments_native_from;
+    const partial = (d) => from && d.month < from.slice(0, 7);
+    const last = sm.monthly.length - 1;
+    const maxI = sm.monthly.reduce((b, d, i, a) => (d.received > a[b].received ? i : b), 0);
+    queueChart(host, () => columns(host, {
+      data: sm.monthly, label: "Поступления по месяцам", height: 210,
+      series: [{ name: "поступило", color: "--accent", value: (d) => d.received, opacity: (d) => (partial(d) ? 0.4 : 1) }],
+      total: (d) => d.received, tick: moneyShort, fmt: money,
+      title: (d) => fmtDate(d.month + "-15", { month: "long", year: "numeric" }) + (partial(d) ? " (частично)" : ""),
+      extra: (d) => [[null, "платежей", num(d.payments)], [null, "чаевые", money(d.tips)], [null, "расходы: материалы, доставка", money(d.costs)]],
+      xLabel: (d, i) => (i % 2 === 0 || i === last) ? fmtDate(d.month + "-15", { month: "short" }).replace(".", "") : "",
+      capLabel: (d, i) => (i === last || i === maxI) && d.received ? moneyShort(d.received) : "",
+    }));
+    return card("Поступления по месяцам", "оплаты клиентов, записанные в CRM", host,
+      from ? h("p", { class: "note" }, `Бледные месяцы — до ${shortDate(from)} ${from.slice(0, 4)}: оплаты из Monday перенесены частично, реальная выручка там была больше.`) : null,
+      tableView(["Месяц", "Поступило", "Платежей", "Чаевые", "Расходы"], sm.monthly.slice().reverse().map((d) => [fmtDate(d.month + "-15", { month: "short", year: "numeric" }), money(d.received), num(d.payments), money(d.tips), money(d.costs)])));
+  }
+
+  function periodSection(sm) {
+    const p = sm.periods[S.period] || sm.periods["90"];
+    const seg = h("div", { class: "seg", role: "group", "aria-label": "Период" }, Object.keys(sm.periods).map((d) =>
+      h("button", { "aria-pressed": String(d === S.period), onclick: () => { S.period = d; try { localStorage.setItem("lerega.period", d); } catch (e) {} render(); } }, d + " дней")));
+    const f = p.funnel, top = Math.max(f[0].n, 1);
+    const funnelCard = card("Путь заявки", `${num(p.leads)} заявок, ${pct(p.win_rate)} стали заказом среди решённых`,
+      h("div", { class: "hbars" }, f.map((st, i) => h("div", { class: "hbar" },
+        h("div", { class: "lab" }, h("span", {}, st.step), h("span", {}, num(st.n) + (i ? " · " + pct(st.n / top) : ""))),
+        h("div", { class: "bar" }, h("i", { style: `width:${(st.n / top) * 100}%` }))))),
+      p.open ? h("p", { class: "note" }, `${num(p.open)} заявок ещё открыты, поэтому конверсия за короткий период занижена.`) : null);
+
+    const lossMax = Math.max(...p.losses.reasons.map((r) => r.n), 1);
+    const lossCard = card("Почему не состоялись", `${num(p.losses.total)} заявок`,
+      h("div", { class: "hbars" }, p.losses.reasons.slice(0, 8).map((r) => h("div", { class: "hbar gray" },
+        h("div", { class: "lab" }, h("span", {}, r.name), h("span", {}, num(r.n) + " · " + pct(r.n / Math.max(p.losses.total, 1)))),
+        h("div", { class: "bar" }, h("i", { style: `width:${(r.n / lossMax) * 100}%` }))))),
+      p.losses.unexplained ? h("p", { class: "note" }, h("span", { class: "pill warn" }, "! " + pct(p.losses.unexplained / Math.max(p.losses.total, 1))),
+        ` отказов записаны как «Other» без пояснения. Если указывать причину, станет видно, где теряются заявки.`) : null);
+
+    return h("div", { class: "stack" },
+      h("div", { class: "section-title" }, h("h2", {}, "Разбор за период"), seg),
+      h("div", { class: "grid two" }, funnelCard, lossCard),
+      breakdownCard("Откуда приходят заявки", "источник из карточки заказа; заявка с двумя источниками считается в обоих", p.sources, p.leads, p.missing.source, "источник"),
+      h("div", { class: "grid two" },
+        breakdownCard("Виды работ", "по полю Work types", p.work_types, p.leads, p.missing.work_type, "вид работ"),
+        breakdownCard("Как обратились", "форма, звонок, сообщение", p.came_via, p.leads, p.missing.came_via, "способ обращения")));
+  }
+
+  function breakdownCard(title, note, rows, total, missing, what) {
+    const max = Math.max(...rows.map((r) => r.leads), 1);
+    return card(title, note,
+      h("div", { class: "scroll" }, h("table", {},
+        h("thead", {}, h("tr", {}, h("th", {}, ""), h("th", {}, ""), h("th", { class: "n" }, "Заявки"), h("th", { class: "n" }, "Заказы"), h("th", { class: "n" }, "Конв."), h("th", { class: "n" }, "Получено"))),
+        h("tbody", {}, rows.map((r) => h("tr", {},
+          h("td", { class: "name" }, r.name),
+          h("td", { style: "width:20%" }, h("div", { class: "track", title: `${r.leads} заявок, ${r.won} заказов` },
+            h("i", { class: "all", style: `width:${(r.leads / max) * 100}%` }), h("i", { class: "won", style: `width:${(r.won / max) * 100}%` }))),
+          h("td", { class: "n" }, num(r.leads)), h("td", { class: "n" }, num(r.won)),
+          h("td", { class: "n" }, pct(r.win_rate)), h("td", { class: "n" }, r.received ? moneyShort(r.received) : "—")))))),
+      legend([["--open", "Заявки"], ["--accent", "Из них заказы"]]),
+      missing ? h("p", { class: "note" }, `У ${num(missing)} из ${num(total)} заявок не указан ${what}.`) : null);
+  }
+
+  function workshopCard(sm) {
+    const w = sm.workshop, sp = sm.speed;
+    const weekMax = Math.max(1, ...w.workers.flatMap((x) => x.weeks));
+    const people = w.workers.length ? h("div", { class: "scroll" }, h("table", {},
+      h("thead", {}, h("tr", {}, h("th", {}, "Мастер"), h("th", { class: "n" }, "Часов за 30 дн"), h("th", { class: "n" }, "Заказов"), h("th", {}, "По неделям"))),
+      h("tbody", {}, w.workers.map((x) => h("tr", {},
+        h("td", { class: "name" }, x.worker), h("td", { class: "n" }, x.hours_30.toFixed(1)), h("td", { class: "n" }, num(x.orders_30)),
+        h("td", {}, (() => { const m = h("span", { class: "mini" }); x.weeks.forEach((v, i) => { const bar = h("i", { class: v ? "" : "z", style: `height:${Math.max(1, (v / weekMax) * 22)}px` }); bindTip(bar, "Неделя с " + shortDate(w.weeks[i]), [[css("--accent"), "часов", v.toFixed(1)]]); m.append(bar); }); return m; })())))))) : h("p", { class: "note" }, "Таймеры мастеров ещё пустые.");
+    const types = w.work_types.length ? h("div", { class: "scroll" }, h("table", {},
+      h("thead", {}, h("tr", {}, h("th", {}, "Вид работ"), h("th", { class: "n" }, "Заказов"), h("th", { class: "n" }, "Часов"), h("th", { class: "n" }, "Ч на заказ"), h("th", { class: "n" }, "$ за час"))),
+      h("tbody", {}, w.work_types.map((t) => h("tr", {}, h("td", { class: "name" }, t.work_type), h("td", { class: "n" }, num(t.orders)), h("td", { class: "n" }, t.hours.toFixed(1)), h("td", { class: "n" }, t.hours_per_order.toFixed(1)), h("td", { class: "n" }, t.per_hour ? "$" + num(t.per_hour) : "—")))))) : null;
+    const speed = h("div", { class: "speed" },
+      h("div", {}, h("span", { class: "note" }, "От заявки до сметы"), h("b", {}, sp.hours_to_quote == null ? "—" : sp.hours_to_quote + " ч"), h("span", { class: "note" }, `медиана, ${num(sp.hours_to_quote_n)} смет`)),
+      h("div", {}, h("span", { class: "note" }, "От заявки до заказа"), h("b", {}, sp.days_to_order == null ? "—" : sp.days_to_order + " дн"), h("span", { class: "note" }, `медиана, ${num(sp.days_to_order_n)} заказов`)),
+      h("div", {}, h("span", { class: "note" }, "В мастерской"), h("b", {}, sp.days_in_shop == null ? "—" : sp.days_in_shop + " дн"), h("span", { class: "note" }, `медиана, ${num(sp.days_in_shop_n)} изделий`)));
+    return h("div", { class: "grid two" },
+      card("Мастерская", w.since ? "таймеры ведутся с " + shortDate(w.since) : "", people, types,
+        types ? h("p", { class: "note" }, "«$ за час» — оплаты по заказу, делённые на часы по таймерам; только для заказов, где есть и то и другое.") : null),
+      card("Скорость", "по заказам, где записаны обе даты", speed));
+  }
+
+  function pendingCard(title, text) {
+    return h("section", { class: "pending" }, h("h2", {}, title), h("p", {}, text));
+  }
+  function messagesCard(m) {
+    if (!m) return pendingCard("Переписка", "Сводка по переписке ещё не пришла из CRM. Здесь будет скорость ответа клиентам и список тех, кто ждёт ответа.");
+    const host = h("div", { class: "chart" });
+    queueChart(host, () => columns(host, {
+      data: m.weeks, label: "Сообщения по неделям", height: 180,
+      series: [{ name: "от клиентов", color: "--accent", value: (d) => d.in }, { name: "наши ответы", color: "--lost", value: (d) => d.out }, { name: "автоматические", color: "--open", value: (d) => d.auto }],
+      total: (d) => d.in + d.out + d.auto, tick: num, fmt: num,
+      title: (d) => "Неделя с " + shortDate(d.week), xLabel: (d, i) => (i % 3 === 0 || i === m.weeks.length - 1) ? shortDate(d.week) : "",
+    }));
+    return card("Переписка", "12 недель",
+      h("div", { class: "speed" },
+        h("div", {}, h("span", { class: "note" }, "Ответ клиенту"), h("b", {}, m.reply_hours_median == null ? "—" : m.reply_hours_median + " ч"), h("span", { class: "note" }, `медиана, ${num(m.replies_n)} ответов за 90 дней`)),
+        h("div", {}, h("span", { class: "note" }, "В течение часа"), h("b", {}, pct(m.reply_within_1h)), h("span", { class: "note" }, "ответов")),
+        h("div", {}, h("span", { class: "note" }, "В течение суток"), h("b", {}, pct(m.reply_within_24h)), h("span", { class: "note" }, "ответов"))),
+      legend([["--accent", "От клиентов"], ["--lost", "Наши ответы"], ["--open", "Автоматические"]]), host,
+      h("p", { class: "note" }, "Каналы за 90 дней: " + m.channels.map((c) => `${c.name} ${num(c.n)}`).join(", ")));
+  }
+  function siteCard(st) {
+    if (!st) return pendingCard("Сайт", "Сводка по визитам сайта ещё не пришла из CRM. Здесь будет, сколько посетителей становятся заявками и из каких источников.");
+    const host = h("div", { class: "chart" });
+    queueChart(host, () => columns(host, {
+      data: st.weeks, label: "Визиты сайта по неделям", height: 180,
+      series: [{ name: "визитов", color: "--open", value: (d) => d.visits - d.orders }, { name: "стали заявкой", color: "--accent", value: (d) => d.orders }],
+      total: (d) => d.visits, tick: num, fmt: num,
+      title: (d) => "Неделя с " + shortDate(d.week), xLabel: (d, i) => (i % 3 === 0 || i === st.weeks.length - 1) ? shortDate(d.week) : "",
+    }));
+    return card("Сайт", `${num(st.visits_90)} визитов за 90 дней, ${num(st.orders_90)} стали заявкой`,
+      legend([["--open", "Визиты"], ["--accent", "Стали заявкой"]]), host,
+      h("div", { class: "scroll" }, h("table", {},
+        h("thead", {}, h("tr", {}, h("th", {}, "Источник"), h("th", { class: "n" }, "Визиты"), h("th", { class: "n" }, "Заявки"), h("th", { class: "n" }, "Конв."))),
+        h("tbody", {}, st.sources.map((r) => h("tr", {}, h("td", { class: "name" }, r.name), h("td", { class: "n" }, num(r.visits)), h("td", { class: "n" }, num(r.orders)), h("td", { class: "n" }, pct(r.rate))))))));
+  }
+
+  function aboutCard(sm) {
+    const t = sm.tables, c = sm.coverage;
+    const missing = Object.entries(t).filter(([, v]) => v == null).map(([k]) => k);
+    if (!sm.messages) missing.push("переписка");
+    if (!sm.site) missing.push("визиты сайта");
+    return card("О данных", "",
+      h("p", { class: "note" }, `Заявки с ${shortDate(c.orders_from)} ${String(c.orders_from).slice(0, 4)} (${num(t.orders)}). История стадий — с ${shortDate(c.stage_history_from)}. Оплаты ведутся в CRM с ${shortDate(c.payments_native_from)}; ${num(sm.done_unpaid)} выполненных с тех пор заказов без записанной оплаты.`),
+      missing.length ? h("p", { class: "note" }, h("span", { class: "pill warn" }, "! Не выгружено"), " " + missing.join(", ") + ". Остальное посчитано по полным данным.") : null,
+      h("p", { class: "note" }, "«Заказ» — заявка, дошедшая до стадий Scheduled, Picked Up, Done или Delivered (а также ожидание материала или посылки). «Не состоялась» — стадии Closed. Время — Остин."));
+  }
+
+  // --- render -----------------------------------------------------------
+
+  const charts = [];
+  function queueChart(host, draw) { charts.push({ host, draw }); }
+  function drawCharts() { for (const c of charts) c.draw(); }
+  let resizeTimer;
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 120); });
+
+  function render() {
+    const sm = S.summary, pl = S.pipeline;
+    if (!sm) return;
+    charts.length = 0;
+    hideTip();
+    const gen = new Date(sm.generated_at);
+    const updated = new Intl.DateTimeFormat("ru-RU", { timeZone: TZ, day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }).format(gen);
+    document.getElementById("updated").textContent = `Данные CRM на ${updated} по Остину` +
+      (sm.schedule && sm.schedule.length ? ` · обновляется в ${sm.schedule.join(", ")}` : "");
+    const app = document.getElementById("app");
+    app.classList.remove("stale");
+    app.replaceChildren(h("div", { class: "stack" },
+      kpis(sm),
+      h("div", { class: "grid two" }, attention(sm, pl), h("div", { class: "stack" }, upcoming(pl), stagesNow(sm))),
+      h("div", { class: "grid two" }, weeklyCard(sm), moneyCard(sm)),
+      periodSection(sm),
+      h("div", { class: "section-title" }, h("h2", {}, "Работа и переписка")),
+      workshopCard(sm),
+      h("div", { class: "grid two" }, messagesCard(sm.messages), siteCard(sm.site)),
+      aboutCard(sm)));
+    requestAnimationFrame(drawCharts);
+  }
+
+  function showMessage(title, text) {
+    document.getElementById("app").replaceChildren(h("div", { class: "card empty" }, h("h2", {}, title), h("p", {}, text)));
+  }
+
+  (async () => {
+    const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    if (!db) {
+      showMessage("Данные недоступны в этом окне", "Сводка читает данные из хранилища страницы. Откройте её в Claude, войдя в аккаунт владельца.");
+      return;
+    }
+    const onError = () => showMessage("Не удалось загрузить данные", "Обновите страницу. Если не поможет — данные ещё не записаны после выгрузки.");
+    db.doc("dashboard/summary").onSnapshot((snap) => { S.summary = snap.exists ? snap.data() : null; render(); }, onError);
+    db.doc("dashboard/pipeline").onSnapshot((snap) => { S.pipeline = snap.exists ? snap.data() : null; render(); }, onError);
+  })();
+})();
+</script>

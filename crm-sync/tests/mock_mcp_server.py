@@ -66,6 +66,8 @@ class FakeCrm:
             if not sql.lstrip().upper().startswith("SELECT"):
                 raise ValueError("read-only")
             return {"rows": self.rows(sql)[:4]}  # the server caps rows below the LIMIT asked
+        if name == "run_sql_wide":
+            return self.rows(args["query"])
         raise ValueError(f"tool {name} failed")
 
 
@@ -132,7 +134,10 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 result = {"content": [{"type": "text", "text": str(e)}], "isError": True}
             else:
-                text = {"type": "text", "text": json.dumps(value, ensure_ascii=False)}
+                body = json.dumps(value, ensure_ascii=False)
+                if server.max_chars and len(body) > server.max_chars:
+                    body = body[:server.max_chars] + f"\n\n[Result cut at {server.max_chars} characters]"
+                text = {"type": "text", "text": body}
                 result = {"content": [text], "structuredContent": value} if params["name"] == "list_clients" \
                     else {"content": [text]}
             return self.send(200, {"jsonrpc": "2.0", "id": msg_id, "result": result})
@@ -148,6 +153,7 @@ def start(mode="json"):
     server.initializations = 0
     server.expire_after = 0
     server.fail_next = 0
+    server.max_chars = 0
     server.calls = []
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server, f"http://127.0.0.1:{server.server_address[1]}/api/mcp"

@@ -113,12 +113,39 @@ class SyncTest(unittest.TestCase):
         self.assertEqual(history, [("new",), ("updated",)])
         self.assertEqual(self.query("SELECT status FROM _runs ORDER BY id"), [("partial",), ("partial",)])
 
+    def test_sql_pages_shrink_when_the_server_cuts_results(self):
+        self.server.max_chars = 150  # about two orders per result
+        crm = self.server.crm
+        for i in range(8, 30):
+            crm.execute("INSERT INTO orders VALUES (?, 'new', ?, 'Остин')", (i, 10.0 * i))
+        plan = {"sql_tool": {"name": "run_sql_wide", "arg": "query", "max_chars": 150},
+                "entities": [{"name": "orders", "sql": "SELECT * FROM orders", "key": "id", "unique": True}]}
+        (Path(self.tmp.name) / "plan.json").write_text(json.dumps(plan))
+        code, out = self.run_cli("pull")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["entities"]["orders"], {"pulled": 29, "new": 29})
+
     def test_cli_runs_as_a_script(self):
         script = HERE.parent / "sync.py"
         result = subprocess.run([sys.executable, str(script), "discover"], capture_output=True, text=True,
                                 env={**os.environ}, timeout=60)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("5 tools", result.stdout)
+
+
+class StoreTest(unittest.TestCase):
+    def test_rows_sharing_a_key_are_all_kept(self):
+        from store import Store
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Store(Path(tmp) / "crm.sqlite")
+            rows = [{"order_no": 1, "at": "t1", "body": "a"}, {"order_no": 1, "at": "t1", "body": "b"},
+                    {"order_no": 1, "at": "t1", "body": "b"}]
+            counts = store.apply(store.start_run(), "notes", rows, ["order_no", "at"])
+            self.assertEqual(counts, {"pulled": 3, "new": 3})
+            self.assertEqual(len(store.records("notes")), 3)
+            again = store.apply(store.start_run(), "notes", rows, ["order_no", "at"])
+            self.assertEqual(again, {"pulled": 3})
+            store.close()
 
 
 class SseSyncTest(SyncTest):
@@ -165,6 +192,72 @@ class ClientTest(unittest.TestCase):
             with self.assertRaises(NetworkBlocked):
                 McpClient("https://crm.example.com/api/mcp", "k").initialize()
         self.assertEqual(urlopen.call_count, 1)
+
+
+
+class AnalyticsTest(unittest.TestCase):
+    """The dashboard builds from a small store, with and without the message and site aggregates."""
+
+    def build(self, with_aggregates):
+        import analytics
+        from store import Store
+        from datetime import datetime, timezone
+        with tempfile.TemporaryDirectory() as tmp:
+            store = Store(Path(tmp) / "crm.sqlite")
+            run = store.start_run()
+            stages = [("New Lead", "New Leads", 2), ("Scheduled", "Scheduled", 8), ("Picked Up", "On Site", 9),
+                      ("Done", "Done", 10), ("Closed", "Archive / No Order", 12)]
+            store.apply(run, "stages", [{"stage": n, "stage_group": g, "sort_order": i} for n, g, i in stages], "stage")
+            orders = []
+            for i, (stage, _, _) in enumerate(stages * 4):
+                orders.append({"order_id": f"o{i}", "order_no": 100 + i, "stage": stage, "step": "Quote Sent" if i % 2 else None,
+                               "created_at": f"2026-09-{1 + i:02d}T15:00:00.123+00:00", "stage_changed_at": "2026-09-25T15:00:00.5+00:00",
+                               "sources": "Yelp, Google Ads" if i % 3 else None, "work_types": "Car", "came_via": "Web Form",
+                               "quote": 300 + i, "deadline": "2026-09-30" if stage == "Picked Up" else None,
+                               "no_order_reason": "Price" if stage == "Closed" else None, "no_order_note": None, "item": "seat",
+                               "received_at_shop": None, "left_shop_at": None, "quote_max": None})
+            store.apply(run, "orders", orders, "order_id")
+            store.apply(run, "payments", [{"order_id": "o3", "kind": "payment", "amount": 500, "tip": 20, "paid_at": "2026-10-02T17:00:00+00:00", "note": None},
+                                          {"order_id": "o3", "kind": "material", "amount": -80, "tip": None, "paid_at": "2026-10-02T17:00:00+00:00", "note": None}],
+                        ["order_id", "kind", "paid_at", "amount"])
+            store.apply(run, "estimates", [{"order_id": "o1", "created_at": "2026-09-02T16:00:00+00:00", "sent_at": "2026-09-02T18:00:00+00:00"}], ["order_id", "created_at"])
+            store.apply(run, "appointments", [{"order_id": "o1", "order_no": 101, "type": "Pickup", "scheduled_at": "2026-10-08T14:00:00+00:00", "status": "scheduled", "executor": "Driver"},
+                                              {"order_id": "o2", "order_no": 102, "type": "Delivery", "scheduled_at": "2026-10-01T14:00:00+00:00", "status": "scheduled", "executor": "Driver"}],
+                        ["order_id", "type", "scheduled_at"])
+            store.apply(run, "work_time", [{"order_id": "o3", "worker": "Мастер", "started_at": "2026-10-01T15:00:00+00:00", "hours": 4.5}], ["order_id", "worker", "started_at"])
+            store.apply(run, "stage_history", [{"order_id": "o1", "to_stage": "Scheduled", "effective_at": "2026-09-03T15:00:00+00:00"}], ["order_id", "effective_at", "to_stage"])
+            if with_aggregates:
+                store.apply(run, "agg_messages_weekly", [{"week": "2026-09-28", "n_in": 5, "n_out": 4, "n_auto": 2}], "week")
+                store.apply(run, "agg_messages_channels", [{"name": "sms", "n": 9}], "name")
+                store.apply(run, "agg_messages_replies", [{"scope": "all", "replies": 4, "median_hours": 1.26, "within_1h": 0.5, "within_24h": 1}], "scope")
+                store.apply(run, "agg_messages_waiting", [{"order_no": 100, "hours": 5}], "order_no")
+                store.apply(run, "agg_site_weekly", [{"week": "2026-09-28", "visits": 40, "orders": 2}], "week")
+                store.apply(run, "agg_site_totals", [{"scope": "all", "visits": 400, "orders": 9}], "scope")
+                for name in ("agg_site_sources", "agg_site_devices", "agg_site_landings"):
+                    store.apply(run, name, [{"name": "google", "visits": 30, "orders": 1}], "name")
+            store.close()
+            tables, last_run = analytics.load(Path(tmp) / "crm.sqlite")
+        return analytics.build(tables, last_run, now=datetime(2026, 10, 6, 17, 0, tzinfo=timezone.utc))
+
+    def test_builds_with_aggregates(self):
+        summary, pipeline = self.build(with_aggregates=True)
+        self.assertEqual(summary["kpi"]["mtd"], 500)
+        self.assertEqual(summary["monthly"][-1]["costs"], 80)
+        self.assertEqual(summary["messages"]["reply_hours_median"], 1.3)
+        self.assertEqual(summary["site"]["visits_90"], 400)
+        reasons = {r["reason"] for r in pipeline["attention"]}
+        self.assertIn("client_waiting", reasons)   # #100 waits for a reply
+        self.assertIn("appointment", reasons)      # the 1 Oct delivery is still "scheduled"
+        self.assertIn("deadline", reasons)         # Picked Up orders past 30 Sep
+        sources = {r["name"]: r for r in summary["periods"]["365"]["sources"]}
+        self.assertEqual(sources["Yelp"]["leads"], sources["Google Ads"]["leads"])  # both sources count
+        self.assertEqual(pipeline["upcoming"][0]["order_no"], 101)
+
+    def test_builds_without_aggregates(self):
+        summary, _ = self.build(with_aggregates=False)
+        self.assertIsNone(summary["messages"])
+        self.assertIsNone(summary["site"])
+        self.assertEqual(summary["tables"]["orders"], 20)
 
 
 if __name__ == "__main__":
