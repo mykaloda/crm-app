@@ -7,7 +7,8 @@
     python3 crm-sync/sync.py pull            pull every entity in plan.json -> data/crm.sqlite
     python3 crm-sync/sync.py export          one CSV per entity -> data/export/
 
-Environment: LEREGA_CRM_KEY (required), LEREGA_CRM_URL, CRM_DATA_DIR, CRM_PLAN.
+Environment: LEREGA_CRM_KEY (unless an API credential on the environment adds it),
+LEREGA_CRM_URL, CRM_DATA_DIR, CRM_PLAN.
 Exit codes: 0 ok, 1 some entities failed (others saved), 2 nothing could be pulled.
 """
 
@@ -50,9 +51,8 @@ def plan_path():
 
 
 def connect():
+    # Unset when the environment's API credential for crm.lerega.com adds the key instead.
     key = os.environ.get("LEREGA_CRM_KEY")
-    if not key:
-        sys.exit("LEREGA_CRM_KEY is not set (the read-only key from Settings -> Channels -> AI access).")
     client = McpClient(os.environ.get("LEREGA_CRM_URL") or DEFAULT_URL, key)
     client.initialize()
     return client

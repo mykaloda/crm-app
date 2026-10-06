@@ -135,6 +135,10 @@ class ClientTest(unittest.TestCase):
         with self.assertRaises(AuthError):
             McpClient(self.url, "wrong").initialize()
 
+    def test_no_key_sends_no_authorization(self):
+        with self.assertRaisesRegex(AuthError, "no key reached the server"):
+            McpClient(self.url, None).initialize()
+
     def test_session_expiry_reinitializes(self):
         client = McpClient(self.url, mock_mcp_server.KEY)
         client.initialize()

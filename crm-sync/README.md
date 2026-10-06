@@ -5,10 +5,14 @@
 
 ## Что нужно один раз
 
-1. В настройках облачного окружения Claude Code разрешить домен `crm.lerega.com`
-   (Network access → Custom → Allowed domains).
-2. Там же добавить переменную окружения `LEREGA_CRM_KEY` с ключом из
-   Settings → Channels → AI access. В код и в git ключ не попадает.
+claude.ai/code → значок облака с именем окружения над полем ввода → **Cloud** → шестерёнка
+у окружения → **Edit environment**. Дальше один из двух вариантов:
+
+- **API credentials** (планы Pro и Max): **Add credential**, Allowed websites `crm.lerega.com`,
+  заголовок `Authorization`, префикс `Bearer`, значение — ключ из Settings → Channels → AI access.
+  Домен открывается сам, ключ не виден ни сессиям, ни скрипту.
+- Или **Network access** → **Custom** → `crm.lerega.com` в **Allowed domains** (с галкой
+  про стандартный список) и строка `LEREGA_CRM_KEY=<ключ>` в **Environment variables**.
 
 ## Команды
 

@@ -49,9 +49,11 @@ class McpClient:
         headers = {
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
-            "Authorization": f"Bearer {self.key}",
             "User-Agent": f"{self.client_name}/1.0",
         }
+        # Without a key the request still works when the environment's API credential adds it.
+        if self.key:
+            headers["Authorization"] = f"Bearer {self.key}"
         if self.session_id:
             headers["Mcp-Session-Id"] = self.session_id
         if self.protocol_version:
@@ -68,7 +70,8 @@ class McpClient:
             except urllib.error.HTTPError as e:
                 detail = e.read()[:300].decode("utf-8", "replace").strip()
                 if e.code in (401, 403):
-                    raise AuthError(f"HTTP {e.code}: the server rejected the key. {detail}") from None
+                    sent = "the server rejected the key" if self.key else "no key reached the server"
+                    raise AuthError(f"HTTP {e.code}: {sent}. {detail}") from None
                 if e.code == 404 and self.session_id and message.get("method") != "initialize":
                     raise _SessionExpired() from None
                 if e.code in RETRY_STATUSES and delay is not None:
