@@ -24,7 +24,8 @@ SCHEDULE = ("07:50", "12:50", "17:50")  # Austin time; keep in step with the rou
 REQUIRED = ("orders", "stages", "stage_history", "payments", "estimates", "appointments", "work_time")
 # Messages and site visits arrive as aggregates the CRM computes (see plan.json), not as raw rows.
 AGGREGATES = ("agg_messages_weekly", "agg_messages_channels", "agg_messages_replies", "agg_messages_waiting",
-              "agg_site_weekly", "agg_site_totals", "agg_site_sources", "agg_site_devices", "agg_site_landings")
+              "agg_site_weekly", "agg_site_totals", "agg_site_sources", "agg_site_devices", "agg_site_services",
+              "agg_site_landings")
 MIGRATED_NOTE = "Перенесено из Monday"  # payments copied over from Monday.com
 UNSET = "(не указано)"
 
@@ -303,6 +304,7 @@ def lead_kpis(crm):
     open_orders = [o for o in crm.orders if o["status"] == "open"]
     in_work = [o for o in crm.orders if o["status"] == "in_work"]
     return {
+        "leads_today": sum(1 for o in crm.orders if o["created"] == crm.today),
         "leads_7": count(0, 7), "leads_prev_7": count(7, 14),
         "leads_30": count(0, 30), "leads_prev_30": count(30, 60),
         "open": len(open_orders),
@@ -444,7 +446,7 @@ def messages_metrics(crm, attention):
         "weeks": [{"week": k, "in": (by_week.get(k) or {}).get("n_in", 0), "out": (by_week.get(k) or {}).get("n_out", 0),
                    "auto": (by_week.get(k) or {}).get("n_auto", 0)} for k in weeks_back(crm)],
         "channels": [{"name": c["name"], "n": c["n"]} for c in sorted(crm.t["agg_messages_channels"] or [], key=lambda c: -c["n"])[:8]],
-        "reply_hours_median": round(r["median_hours"], 1) if r.get("median_hours") is not None else None,
+        "reply_hours_median": round(r["median_hours"], 2) if r.get("median_hours") is not None else None,
         "replies_n": r.get("replies") or 0,
         "reply_within_1h": rate(r.get("within_1h")), "reply_within_24h": rate(r.get("within_24h")),
     }
@@ -464,7 +466,8 @@ def site_metrics(crm):
     return {"weeks": [{"week": k, "visits": (by_week.get(k) or {}).get("visits", 0), "orders": (by_week.get(k) or {}).get("orders", 0)}
                       for k in weeks_back(crm)],
             "visits_90": total.get("visits", 0), "orders_90": total.get("orders", 0),
-            "sources": table("agg_site_sources"), "devices": table("agg_site_devices"), "landings": table("agg_site_landings")}
+            "sources": table("agg_site_sources"), "devices": table("agg_site_devices"),
+            "services": table("agg_site_services"), "landings": table("agg_site_landings")}
 
 
 def attention_row(o, reason, detail=None):
@@ -505,6 +508,8 @@ def build(tables, run, now=None):
     attention = attention_list(crm, missed)
     messages = messages_metrics(crm, attention)
     attention.sort(key=lambda r: (ATTENTION[r["reason"]][0], -(r["days_in_stage"] or 0)))
+    seen = set()  # one row per order, under its most urgent reason
+    attention = [r for r in attention if not (r["order_no"] in seen or seen.add(r["order_no"]))]
     payments = tables["payments"] or []
     native = [p["paid_at"] for p in payments if p["note"] != MIGRATED_NOTE and p["paid_at"]]
     history = [h["effective_at"] for h in tables["stage_history"] or [] if h["effective_at"]]

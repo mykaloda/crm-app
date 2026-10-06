@@ -201,6 +201,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
     return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
   };
   const days = (n) => n == null ? "—" : n + " " + plural(n, "день", "дня", "дней");
+  const hours = (x) => x == null ? "—" : x < 1 ? Math.max(1, Math.round(x * 60)) + " мин" : (Math.round(x * 10) / 10) + " ч";
   const fmtDate = (iso, opts) => {
     if (!iso) return "—";
     const d = iso.length <= 10 ? new Date(iso + "T12:00:00Z") : new Date(iso);
@@ -519,7 +520,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
       h("thead", {}, h("tr", {}, h("th", {}, "Вид работ"), h("th", { class: "n" }, "Заказов"), h("th", { class: "n" }, "Часов"), h("th", { class: "n" }, "Ч на заказ"), h("th", { class: "n" }, "$ за час"))),
       h("tbody", {}, w.work_types.map((t) => h("tr", {}, h("td", { class: "name" }, t.work_type), h("td", { class: "n" }, num(t.orders)), h("td", { class: "n" }, t.hours.toFixed(1)), h("td", { class: "n" }, t.hours_per_order.toFixed(1)), h("td", { class: "n" }, t.per_hour ? "$" + num(t.per_hour) : "—")))))) : null;
     const speed = h("div", { class: "speed" },
-      h("div", {}, h("span", { class: "note" }, "От заявки до сметы"), h("b", {}, sp.hours_to_quote == null ? "—" : sp.hours_to_quote + " ч"), h("span", { class: "note" }, `медиана, ${num(sp.hours_to_quote_n)} смет`)),
+      h("div", {}, h("span", { class: "note" }, "От заявки до сметы"), h("b", {}, hours(sp.hours_to_quote)), h("span", { class: "note" }, `медиана, ${num(sp.hours_to_quote_n)} смет`)),
       h("div", {}, h("span", { class: "note" }, "От заявки до заказа"), h("b", {}, sp.days_to_order == null ? "—" : sp.days_to_order + " дн"), h("span", { class: "note" }, `медиана, ${num(sp.days_to_order_n)} заказов`)),
       h("div", {}, h("span", { class: "note" }, "В мастерской"), h("b", {}, sp.days_in_shop == null ? "—" : sp.days_in_shop + " дн"), h("span", { class: "note" }, `медиана, ${num(sp.days_in_shop_n)} изделий`)));
     return h("div", { class: "grid two" },
@@ -536,16 +537,16 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
     const host = h("div", { class: "chart" });
     queueChart(host, () => columns(host, {
       data: m.weeks, label: "Сообщения по неделям", height: 180,
-      series: [{ name: "от клиентов", color: "--accent", value: (d) => d.in }, { name: "наши ответы", color: "--lost", value: (d) => d.out }, { name: "автоматические", color: "--open", value: (d) => d.auto }],
+      series: [{ name: "от клиентов", color: "--accent", value: (d) => d.in }, { name: "ответы команды", color: "--lost", value: (d) => d.out }, { name: "рассылки", color: "--open", value: (d) => d.auto }],
       total: (d) => d.in + d.out + d.auto, tick: num, fmt: num,
       title: (d) => "Неделя с " + shortDate(d.week), xLabel: (d, i) => (i % 3 === 0 || i === m.weeks.length - 1) ? shortDate(d.week) : "",
     }));
     return card("Переписка", "12 недель",
       h("div", { class: "speed" },
-        h("div", {}, h("span", { class: "note" }, "Ответ клиенту"), h("b", {}, m.reply_hours_median == null ? "—" : m.reply_hours_median + " ч"), h("span", { class: "note" }, `медиана, ${num(m.replies_n)} ответов за 90 дней`)),
+        h("div", {}, h("span", { class: "note" }, "Ответ клиенту"), h("b", {}, hours(m.reply_hours_median)), h("span", { class: "note" }, `медиана ответа человеком, ${num(m.replies_n)} обращений за 90 дней`)),
         h("div", {}, h("span", { class: "note" }, "В течение часа"), h("b", {}, pct(m.reply_within_1h)), h("span", { class: "note" }, "ответов")),
         h("div", {}, h("span", { class: "note" }, "В течение суток"), h("b", {}, pct(m.reply_within_24h)), h("span", { class: "note" }, "ответов"))),
-      legend([["--accent", "От клиентов"], ["--lost", "Наши ответы"], ["--open", "Автоматические"]]), host,
+      legend([["--accent", "От клиентов"], ["--lost", "Ответы команды"], ["--open", "Автоматические рассылки"]]), host,
       h("p", { class: "note" }, "Каналы за 90 дней: " + m.channels.map((c) => `${c.name} ${num(c.n)}`).join(", ")));
   }
   function siteCard(st) {
@@ -557,11 +558,14 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
       total: (d) => d.visits, tick: num, fmt: num,
       title: (d) => "Неделя с " + shortDate(d.week), xLabel: (d, i) => (i % 3 === 0 || i === st.weeks.length - 1) ? shortDate(d.week) : "",
     }));
+    const visitTable = (head, rows) => h("div", { class: "scroll" }, h("table", {},
+      h("thead", {}, h("tr", {}, h("th", {}, head), h("th", { class: "n" }, "Визиты"), h("th", { class: "n" }, "Заявки"), h("th", { class: "n" }, "Конв."))),
+      h("tbody", {}, rows.map((r) => h("tr", {}, h("td", { class: "name" }, r.name), h("td", { class: "n" }, num(r.visits)), h("td", { class: "n" }, num(r.orders)), h("td", { class: "n" }, pct(r.rate)))))));
     return card("Сайт", `${num(st.visits_90)} визитов за 90 дней, ${num(st.orders_90)} стали заявкой`,
       legend([["--open", "Визиты"], ["--accent", "Стали заявкой"]]), host,
-      h("div", { class: "scroll" }, h("table", {},
-        h("thead", {}, h("tr", {}, h("th", {}, "Источник"), h("th", { class: "n" }, "Визиты"), h("th", { class: "n" }, "Заявки"), h("th", { class: "n" }, "Конв."))),
-        h("tbody", {}, st.sources.map((r) => h("tr", {}, h("td", { class: "name" }, r.name), h("td", { class: "n" }, num(r.visits)), h("td", { class: "n" }, num(r.orders)), h("td", { class: "n" }, pct(r.rate))))))));
+      visitTable("Откуда пришли", st.sources),
+      st.services && st.services.length ? visitTable("Что выбирали на сайте", st.services) : null,
+      st.devices && st.devices.length ? h("p", { class: "note" }, "Устройства: " + st.devices.map((d) => `${d.name} ${num(d.visits)} (${pct(d.rate)} в заявку)`).join(", ")) : null);
   }
 
   function aboutCard(sm) {

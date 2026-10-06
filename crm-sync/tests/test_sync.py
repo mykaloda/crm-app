@@ -222,7 +222,7 @@ class AnalyticsTest(unittest.TestCase):
                         ["order_id", "kind", "paid_at", "amount"])
             store.apply(run, "estimates", [{"order_id": "o1", "created_at": "2026-09-02T16:00:00+00:00", "sent_at": "2026-09-02T18:00:00+00:00"}], ["order_id", "created_at"])
             store.apply(run, "appointments", [{"order_id": "o1", "order_no": 101, "type": "Pickup", "scheduled_at": "2026-10-08T14:00:00+00:00", "status": "scheduled", "executor": "Driver"},
-                                              {"order_id": "o2", "order_no": 102, "type": "Delivery", "scheduled_at": "2026-10-01T14:00:00+00:00", "status": "scheduled", "executor": "Driver"}],
+                                              {"order_id": "o6", "order_no": 106, "type": "Delivery", "scheduled_at": "2026-10-01T14:00:00+00:00", "status": "scheduled", "executor": "Driver"}],
                         ["order_id", "type", "scheduled_at"])
             store.apply(run, "work_time", [{"order_id": "o3", "worker": "Мастер", "started_at": "2026-10-01T15:00:00+00:00", "hours": 4.5}], ["order_id", "worker", "started_at"])
             store.apply(run, "stage_history", [{"order_id": "o1", "to_stage": "Scheduled", "effective_at": "2026-09-03T15:00:00+00:00"}], ["order_id", "effective_at", "to_stage"])
@@ -243,9 +243,11 @@ class AnalyticsTest(unittest.TestCase):
         summary, pipeline = self.build(with_aggregates=True)
         self.assertEqual(summary["kpi"]["mtd"], 500)
         self.assertEqual(summary["monthly"][-1]["costs"], 80)
-        self.assertEqual(summary["messages"]["reply_hours_median"], 1.3)
+        self.assertEqual(summary["messages"]["reply_hours_median"], 1.26)
         self.assertEqual(summary["site"]["visits_90"], 400)
         reasons = {r["reason"] for r in pipeline["attention"]}
+        numbers = [r["order_no"] for r in pipeline["attention"]]
+        self.assertEqual(len(numbers), len(set(numbers)))  # one row per order
         self.assertIn("client_waiting", reasons)   # #100 waits for a reply
         self.assertIn("appointment", reasons)      # the 1 Oct delivery is still "scheduled"
         self.assertIn("deadline", reasons)         # Picked Up orders past 30 Sep
