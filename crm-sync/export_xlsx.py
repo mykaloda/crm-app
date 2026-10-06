@@ -8,7 +8,7 @@ Times are converted to Austin time. Needs openpyxl (pip install openpyxl).
 import json
 import os
 import sqlite3
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -32,7 +32,10 @@ def cell_value(value, column_type):
     if value is None:
         return None
     if column_type.startswith("timestamp") and isinstance(value, str):
-        return datetime.fromisoformat(value).astimezone(TZ).replace(tzinfo=None)
+        t = datetime.fromisoformat(value)
+        if t.utcoffset() == timedelta(0) and (t.hour, t.minute, t.second, t.microsecond) == (0, 0, 0, 0):
+            return t.replace(tzinfo=None)  # a Monday.com date stored as UTC midnight: keep the date
+        return t.astimezone(TZ).replace(tzinfo=None)
     if column_type == "date" and isinstance(value, str):
         return date.fromisoformat(value[:10])
     if isinstance(value, str):
