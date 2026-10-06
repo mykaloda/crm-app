@@ -24,6 +24,7 @@ python3 crm-sync/sync.py pull              # выгрузка по распис�
 python3 crm-sync/sync.py pull --full       # полная выгрузка: ещё сырая переписка, визиты сайта и заметки
 python3 crm-sync/sync.py pull orders       # только указанные сущности
 python3 crm-sync/analytics.py              # документы сводки -> data/dashboard/summary.json, pipeline.json
+python3 crm-sync/export_xlsx.py            # все таблицы одним файлом -> data/export/lerega-crm.xlsx (нужен openpyxl)
 python3 crm-sync/tests/test_sync.py      # тесты на имитации сервера
 ```
 
