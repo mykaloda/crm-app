@@ -501,7 +501,8 @@ SCORECARD = (  # key, area, label, unit, base, target, target value, better, mai
     ("output_week", "Мастерская", "Выпуск в неделю против приёма", "шт.",
      "около 9 против 8–13", "выпуск не меньше приёма, 10–12 в неделю", 10, "higher", False),
     ("deadlines", "Мастерская", "Сроки соблюдены", "%", "9 из 14", "не меньше 85%", 85, "higher", False),
-    ("visit_cancel", "Мастерская", "Отмены и переносы визитов", "%", "48%", "не больше 25%", 25, "lower", False),
+    ("visit_cancel", "Мастерская", "Визиты, отменённые без переноса", "%", "22% (48% вместе с переносами)",
+     "не больше 10%", 10, "lower", False),
     ("price_hour", "Цены", "Цена на плановый час в перетяжке, медиана", "$",
      "около $32 на учтённый час", "не меньше $60", 60, "higher", False),
     ("big_quote_conv", "Цены", "Конверсия смет от $1 200, когорта 45 дней", "%",
@@ -510,8 +511,8 @@ SCORECARD = (  # key, area, label, unit, base, target, target value, better, mai
      "около $29–33 тыс.", "$35 тыс. и выше, декабрь — с поправкой на сезон", 35000, "higher", True),
     ("square_coverage", "Деньги", "Платежи Square, которые есть в CRM", "%",
      "82% (с 14.09)", "не меньше 98%", 98, "higher", False),
-    ("done_unpaid", "Деньги", "Выполненные без платежа в CRM старше 7 дней", "шт.",
-     "42 выполненных с 14.08", "0", 0, "lower", False),
+    ("done_unpaid", "Деньги", "Выполненные без записанной оплаты старше 7 дней", "шт.",
+     "7 из 25 закрытых в CRM 14–29.09", "0", 0, "lower", False),
     ("wasted_ads", "Каналы", "Расход на кампании без выигранных заказов за 45 дней", "$",
      "около $1,7 тыс. в сентябре", "$0", 0, "lower", False),
     ("call_source", "Каналы", "Источник указан у звонковых обращений", "%", "3%", "не меньше 70%", 70,
@@ -531,6 +532,7 @@ SMALL_N = 20  # below this a rate jumps by five points or more from a single cas
 FB = {"Facebook", "Instagram", "Facebook Ads"}
 DONE_STAGES = ("Done", "Delivered")
 MAIN_SHOP = ("Lakeway Shop", "On Deck")
+PAYMENTS_COMPLETE = date(2026, 9, 14)  # from here on the CRM payment journal holds ~all Square payments
 
 
 def pct(part, whole):
@@ -627,19 +629,26 @@ def scorecard_values(crm):
         notes.append(f"ещё {overdue} просрочено и не выдано")
     values["deadlines"] = (pct(met, met + late), met + late, "; ".join(notes))
 
-    visits = [a for a in crm.t["appointments"] or [] if a["status"] in ("done", "cancelled")
-              and in_month(local_day(a["scheduled_at"]))]
-    values["visit_cancel"] = (pct(sum(a["status"] == "cancelled" for a in visits), len(visits)), len(visits),
-                              "визиты за 30 дней; перенос — это отмена и новая запись")
+    # A reschedule shows up as a cancelled visit plus another visit of the same type for the order.
+    appointments = crm.t["appointments"] or []
+    kept = {(a["order_id"], a["type"]) for a in appointments if a["status"] in ("done", "scheduled")}
+    visits = [a for a in appointments if a["status"] in ("done", "cancelled") and in_month(local_day(a["scheduled_at"]))]
+    dropped = sum(a["status"] == "cancelled" and (a["order_id"], a["type"]) not in kept for a in visits)
+    values["visit_cancel"] = (pct(dropped, len(visits)), len(visits), "визиты за 30 дней; перенос на другое время не считается")
 
-    payments = [p for p in crm.t["payments"] or [] if p["paid_at"] and local_day(p["paid_at"]) <= today]
-    native = [local_day(p["paid_at"]) for p in payments if p["note"] != MIGRATED_NOTE]
-    if native:
-        since, cutoff = min(native), today - timedelta(days=7)
-        paid = {p["order_id"] for p in payments if p["kind"] == "payment" and (p["amount"] or 0) > 0}
-        unpaid = sum(1 for o in crm.orders if o["status"] == "done" and o["order_id"] not in paid
-                     and since <= (finished.get(o["order_id"]) or local_day(o["stage_changed_at"])) <= cutoff)
-        values["done_unpaid"] = (unpaid, None, f"выполнены с {since:%d.%m}, когда оплаты начали вносить в CRM")
+    # Only work closed in the CRM itself (a move to Done or Delivered in the stage history) once the payment
+    # journal became complete; orders imported from Monday.com carry no payment rows at all.
+    paid = {p["order_id"] for p in crm.t["payments"] or [] if p["kind"] == "payment" and (p["amount"] or 0) > 0
+            and p["paid_at"] and local_day(p["paid_at"]) <= today}
+    closed = {}
+    for h in crm.t["stage_history"] or []:
+        d = local_day(h["effective_at"])
+        if h["to_stage"] in DONE_STAGES and d and d <= today:
+            closed[h["order_id"]] = min(d, closed.get(h["order_id"], d))
+    cutoff = today - timedelta(days=7)
+    unpaid = sum(1 for o in crm.orders if o["status"] == "done" and o["order_id"] not in paid
+                 and PAYMENTS_COMPLETE <= closed.get(o["order_id"], date.min) <= cutoff)
+    values["done_unpaid"] = (unpaid, None, f"закрыты в CRM с {PAYMENTS_COMPLETE:%d.%m} и раньше чем 7 дней назад")
 
     recent = [o for o in crm.orders if in_month(o["created"])]
     calls = [o for o in recent if o.get("came_via") == "Phone Call"]
