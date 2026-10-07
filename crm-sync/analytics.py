@@ -512,7 +512,7 @@ SCORECARD = (  # key, area, label, unit, base, target, target value, better, mai
     ("square_coverage", "Деньги", "Платежи Square, которые есть в CRM", "%",
      "82% (с 14.09)", "не меньше 98%", 98, "higher", False),
     ("done_unpaid", "Деньги", "Выполненные без записанной оплаты старше 7 дней", "шт.",
-     "7 из 25 закрытых в CRM 14–29.09", "0", 0, "lower", False),
+     "9 из 28 закрытых в CRM 14–29.09", "0", 0, "lower", False),
     ("wasted_ads", "Каналы", "Расход на кампании без выигранных заказов за 45 дней", "$",
      "около $1,7 тыс. в сентябре", "$0", 0, "lower", False),
     ("call_source", "Каналы", "Источник указан у звонковых обращений", "%", "3%", "не меньше 70%", 70,
@@ -646,7 +646,7 @@ def scorecard_values(crm):
         if h["to_stage"] in DONE_STAGES and d and d <= today:
             closed[h["order_id"]] = min(d, closed.get(h["order_id"], d))
     cutoff = today - timedelta(days=7)
-    unpaid = sum(1 for o in crm.orders if o["status"] == "done" and o["order_id"] not in paid
+    unpaid = sum(1 for o in crm.orders if o["status"] != "lost" and o["order_id"] not in paid
                  and PAYMENTS_COMPLETE <= closed.get(o["order_id"], date.min) <= cutoff)
     values["done_unpaid"] = (unpaid, None, f"закрыты в CRM с {PAYMENTS_COMPLETE:%d.%m} и раньше чем 7 дней назад")
 
