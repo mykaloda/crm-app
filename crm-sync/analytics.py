@@ -489,16 +489,17 @@ SCORECARD = (  # key, area, label, unit, base, target, target value, better, mai
     ("photos_back", "Продажи", "Прислали фото из тех, кого просили (без лид-форм Facebook)", "%",
      "40–49%", "не меньше 55%", 55, "higher", False),
     ("quote_after_photo", "Продажи", "Смета после фото, медиана в рабочее время", "ч",
-     "1,4 ч; 31% ждут дольше суток", "не больше 1 ч; дольше суток — не больше 10%", 1, "lower", False),
+     "1,4 ч; 31–44% ждут дольше суток", "не больше 1 ч; дольше суток — не больше 10%", 1, "lower", False),
     ("conversion", "Продажи", "Конверсия решённых обращений в заказ, когорта 45 дней", "%",
      "16% (декабрь–август)", "20%", 20, "higher", True),
     ("conversion_no_fb", "Продажи", "То же без лид-форм Facebook", "%",
      "19% (декабрь–август)", "24%", 24, "higher", True),
     ("no_reason", "Продажи", "Потери без причины: «Other» или пусто, без заметки", "%",
      "60% всех 1 642 потерь (из них «Other» — 58%)", "не больше 10%", 10, "lower", False),
-    ("wip", "Мастерская", "Изделий в работе", "шт.", "39", "не больше 30", 30, "lower", True),
+    ("wip", "Мастерская", "Изделий в Lakeway и очереди On Deck", "шт.", "28 (всего с сумками и партнёрами — 39)",
+     "не больше 30", 30, "lower", True),
     ("output_week", "Мастерская", "Выпуск в неделю против приёма", "шт.",
-     "около 9 против 11–25", "выпуск не меньше приёма, 10–12 в неделю", 10, "higher", False),
+     "около 9 против 8–13", "выпуск не меньше приёма, 10–12 в неделю", 10, "higher", False),
     ("deadlines", "Мастерская", "Сроки соблюдены", "%", "9 из 14", "не меньше 85%", 85, "higher", False),
     ("visit_cancel", "Мастерская", "Отмены и переносы визитов", "%", "48%", "не больше 25%", 25, "lower", False),
     ("price_hour", "Цены", "Цена на плановый час в перетяжке, медиана", "$",
@@ -529,6 +530,7 @@ MANUAL = {  # key -> where the Monday measurement comes from
 SMALL_N = 20  # below this a rate jumps by five points or more from a single case
 FB = {"Facebook", "Instagram", "Facebook Ads"}
 DONE_STAGES = ("Done", "Delivered")
+MAIN_SHOP = ("Lakeway Shop", "On Deck")
 
 
 def pct(part, whole):
@@ -594,9 +596,12 @@ def scorecard_values(crm):
                 and not (o.get("no_order_note") or "").strip())
     values["no_reason"] = (pct(blank, len(lost)), len(lost), "закрытые за 30 дней")
 
-    # In the shop: received and not yet out, unless the order was lost.
+    # In the shop: received and not yet out, unless the order was lost. The limit is for the Lakeway workshop
+    # and its On Deck queue; handbags at home and partner shops have their own hands.
     shop = lambda o, d: (local_day(o.get("received_at_shop")) or date.max) <= d < (local_day(o.get("left_shop_at")) or date.max)
-    values["wip"] = (sum(1 for o in crm.orders if o["status"] != "lost" and shop(o, today)), None, "в мастерской сейчас")
+    held = [o for o in crm.orders if o["status"] != "lost" and shop(o, today)]
+    values["wip"] = (sum(1 for o in held if o.get("shop") in MAIN_SHOP), None,
+                     f"сейчас; всего с сумками и партнёрами — {len(held)}")
     monday = week_start(today) - timedelta(weeks=1)
     in_week = lambda d: d is not None and monday <= d < monday + timedelta(weeks=1)
     out = sum(1 for o in crm.orders if o["won"] and in_week(local_day(o.get("left_shop_at"))))
