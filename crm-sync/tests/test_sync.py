@@ -198,7 +198,7 @@ class ClientTest(unittest.TestCase):
 class AnalyticsTest(unittest.TestCase):
     """The dashboard builds from a small store, with and without the message and site aggregates."""
 
-    def build(self, with_aggregates):
+    def build(self, with_aggregates, manual=None):
         import analytics
         from store import Store
         from datetime import datetime, timezone
@@ -235,9 +235,14 @@ class AnalyticsTest(unittest.TestCase):
                 store.apply(run, "agg_site_totals", [{"scope": "all", "visits": 400, "orders": 9}], "scope")
                 for name in ("agg_site_sources", "agg_site_devices", "agg_site_landings"):
                     store.apply(run, name, [{"name": "google", "visits": 30, "orders": 1}], "name")
+                store.apply(run, "agg_first_reply_weekly", [
+                    {"week": "2026-09-21", "leads": 74, "leads_day": 49, "replied_24h": 26, "median_minutes_day": 75.4},
+                    {"week": "2026-09-28", "leads": 81, "leads_day": 57, "replied_24h": 24, "median_minutes_day": 37.7},
+                    {"week": "2026-10-05", "leads": 38, "leads_day": 32, "replied_24h": 10, "median_minutes_day": 126.8}], "week")
+                store.apply(run, "agg_quote_followup_weekly", [{"week": "2026-09-28", "quotes": 32, "silent_24h": 18, "touched_30h": 0}], "week")
             store.close()
             tables, last_run = analytics.load(Path(tmp) / "crm.sqlite")
-        return analytics.build(tables, last_run, now=datetime(2026, 10, 6, 17, 0, tzinfo=timezone.utc))
+        return analytics.build(tables, last_run, now=datetime(2026, 10, 6, 17, 0, tzinfo=timezone.utc), manual=manual)
 
     def test_builds_with_aggregates(self):
         summary, pipeline = self.build(with_aggregates=True)
@@ -260,6 +265,35 @@ class AnalyticsTest(unittest.TestCase):
         self.assertIsNone(summary["messages"])
         self.assertIsNone(summary["site"])
         self.assertEqual(summary["tables"]["orders"], 20)
+        reply = next(r for r in summary["scorecard"] if r["key"] == "first_reply")
+        self.assertEqual((reply["value"], reply["status"], reply["trend"]), (None, None, None))
+
+    def test_scorecard(self):
+        manual = {"as_of": "2026-10-05", "values": {"net_sales": {"value": 31000}},
+                  "previous": {"as_of": "2026-09-28", "values": {"net_sales": {"value": 30000}}}}
+        summary, _ = self.build(with_aggregates=True, manual=manual)
+        rows = {r["key"]: r for r in summary["scorecard"]}
+        self.assertEqual(len(rows), len(summary["scorecard"]))
+        reply = rows["first_reply"]  # the week of 28 Sep: the week of 5 Oct is not over yet
+        self.assertEqual((reply["value"], reply["prev"], reply["trend"], reply["status"]), (38, 75, "better", "off"))
+        self.assertEqual(rows["no_reply_24h"]["value"], 70.4)
+        self.assertEqual((rows["quote_touch"]["value"], rows["quote_touch"]["small"]), (0, True))
+        deadlines = rows["deadlines"]  # four Picked Up orders were due 30 Sep and are still in the shop
+        self.assertIsNone(deadlines["value"])  # nothing handed over: no rate rather than a zero
+        self.assertIn("ещё 4 просрочено", deadlines["note"])
+        self.assertEqual((rows["no_reason"]["value"], rows["no_reason"]["n"]), (0, 4))  # every loss names Price
+        sales = rows["net_sales"]
+        self.assertEqual((sales["value"], sales["trend"], sales["manual"]), (31000, "better", True))
+        self.assertTrue(sales["note"].startswith("замер 2026-10-05"))
+        self.assertIsNone(rows["reviews"]["value"])
+        self.assertEqual(sum(r["main"] for r in rows.values()), 6)
+
+    def test_plain_dates_keep_their_day(self):
+        import analytics
+        from datetime import date
+        self.assertEqual(analytics.local_day("2026-09-17"), date(2026, 9, 17))
+        self.assertEqual(analytics.local_day("2026-09-17T00:00:00+00:00"), date(2026, 9, 17))  # Monday.com import
+        self.assertEqual(analytics.local_day("2026-09-18T02:00:00.5+00:00"), date(2026, 9, 17))  # evening in Austin
 
 
 if __name__ == "__main__":

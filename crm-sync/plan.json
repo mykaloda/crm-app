@@ -143,6 +143,20 @@
       "page_size": 500
     },
     {
+      "name": "agg_quote_followup_weekly",
+      "key": "week",
+      "order_by": "week",
+      "page_size": 500,
+      "sql": "WITH q AS ( SELECT e.order_id, min(e.sent_at) AS sent FROM estimates e WHERE e.sent_at IS NOT NULL AND e.sent_at >= now() - interval '90 days' GROUP BY e.order_id ), recent AS ( SELECT m.order_id, m.occurred_at, m.direction FROM messages m JOIN q ON q.order_id = m.order_id WHERE m.occurred_at >= q.sent ), per AS ( SELECT q.order_id, q.sent, min(r.occurred_at) FILTER (WHERE r.direction = 'in') AS first_in, min(r.occurred_at) FILTER (WHERE r.direction = 'out' AND r.occurred_at >= q.sent + interval '12 hours') AS first_touch FROM q LEFT JOIN recent r ON r.order_id = q.order_id GROUP BY q.order_id, q.sent ) SELECT to_char(date_trunc('week', sent AT TIME ZONE 'America/Chicago'), 'YYYY-MM-DD') AS week, count(*) AS quotes, count(*) FILTER (WHERE sent <= now() - interval '30 hours') AS quotes_aged, count(*) FILTER (WHERE sent <= now() - interval '30 hours' AND (first_in IS NULL OR first_in > sent + interval '24 hours')) AS silent_24h, count(*) FILTER (WHERE sent <= now() - interval '30 hours' AND (first_in IS NULL OR first_in > sent + interval '24 hours') AND first_touch <= sent + interval '30 hours' AND (first_in IS NULL OR first_touch < first_in)) AS touched_30h, percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM first_touch - sent) / 3600) FILTER (WHERE (first_in IS NULL OR first_in > sent + interval '24 hours') AND (first_in IS NULL OR first_touch < first_in)) AS median_touch_hours FROM per GROUP BY 1 ORDER BY 1"
+    },
+    {
+      "name": "agg_first_reply_weekly",
+      "key": "week",
+      "order_by": "week",
+      "page_size": 500,
+      "sql": "WITH recent AS ( SELECT order_id, occurred_at, direction, channel, template_code, is_automated, body FROM messages WHERE order_id IS NOT NULL AND occurred_at >= now() - interval '110 days' ), first_in AS ( SELECT order_id, min(occurred_at) AS first_in FROM recent WHERE direction = 'in' GROUP BY order_id ), leads AS ( SELECT o.order_id, coalesce(f.first_in, CASE WHEN o.created_at <> date_trunc('day', o.created_at) THEN o.created_at END) AS started FROM orders o LEFT JOIN first_in f ON f.order_id = o.order_id WHERE o.created_at >= now() - interval '100 days' AND o.came_via IS DISTINCT FROM 'Phone Call' ), answers AS ( SELECT order_id, occurred_at FROM recent WHERE (direction = 'out' AND NOT (template_code IS NOT NULL OR (coalesce(is_automated, false) AND channel NOT IN ('sms', 'call')))) OR (direction = 'in' AND channel = 'call' AND body ~ '(Duration - |call, |incoming · )[0-9]+:[0-9][0-9]' AND (substring(body from '(?:Duration - |call, |incoming · )([0-9]+):[0-9][0-9]')::int * 60 + substring(body from '(?:Duration - |call, |incoming · )[0-9]+:([0-9][0-9])')::int) > 20) ), replies AS ( SELECT l.order_id, l.started, min(a.occurred_at) AS replied FROM leads l LEFT JOIN answers a ON a.order_id = l.order_id AND a.occurred_at >= l.started WHERE l.started IS NOT NULL GROUP BY l.order_id, l.started ) SELECT to_char(date_trunc('week', started AT TIME ZONE 'America/Chicago'), 'YYYY-MM-DD') AS week, count(*) AS leads, count(*) FILTER (WHERE replied <= started + interval '24 hours') AS replied_24h, count(*) FILTER (WHERE replied <= started + interval '15 minutes') AS replied_15m, percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM replied - started) / 60) FILTER (WHERE replied <= started + interval '7 days') AS median_minutes, count(*) FILTER (WHERE extract(hour FROM started AT TIME ZONE 'America/Chicago') BETWEEN 8 AND 19) AS leads_day, percentile_cont(0.5) WITHIN GROUP (ORDER BY extract(epoch FROM replied - started) / 60) FILTER (WHERE replied <= started + interval '7 days' AND extract(hour FROM started AT TIME ZONE 'America/Chicago') BETWEEN 8 AND 19) AS median_minutes_day FROM replies WHERE started >= now() - interval '84 days' GROUP BY 1 ORDER BY 1"
+    },
+    {
       "name": "agg_site_weekly",
       "key": "week",
       "order_by": "week",
