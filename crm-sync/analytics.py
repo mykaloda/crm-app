@@ -24,7 +24,8 @@ SCHEDULE = ("07:50", "12:50", "17:50")  # Austin time; keep in step with the rou
 REQUIRED = ("orders", "stages", "stage_history", "payments", "estimates", "appointments", "work_time")
 # Messages and site visits arrive as aggregates the CRM computes (see plan.json), not as raw rows.
 AGGREGATES = ("agg_messages_weekly", "agg_messages_channels", "agg_messages_replies", "agg_messages_waiting",
-              "agg_first_reply_weekly", "agg_quote_followup_weekly", "agg_site_weekly", "agg_site_totals",
+              "agg_sla_weekly", "agg_photo_reminder_weekly", "agg_quote_photo_weekly", "agg_actions_weekly",
+              "agg_site_weekly", "agg_site_totals",
               "agg_site_sources", "agg_site_devices", "agg_site_services", "agg_site_landings")
 MIGRATED_NOTE = "Перенесено из Monday"  # payments copied over from Monday.com
 UNSET = "(не указано)"
@@ -473,70 +474,91 @@ def site_metrics(crm):
             "services": table("agg_site_services"), "landings": table("agg_site_landings")}
 
 
-# --- weekly scorecard ---------------------------------------------------------
+# --- plan metrics -------------------------------------------------------------
 
-# The table «Метрики на каждую неделю» of the advisory doc, row for row. Base and target are the doc's own
-# words (the base is the last measurement before the plan started on 2026-10-07); each value is compared
-# with the same measure a week earlier. Rows in MANUAL are measured outside the CRM (Square, ad accounts,
-# Google) and arrive through data/scorecard_manual.json.
-SCORECARD = (  # key, area, label, unit, base, target, target value, better, main
-    ("first_reply", "Продажи", "Медиана первого ответа человека на новое обращение, 8:00–20:00", "мин",
-     "97 мин днём, 159 круглосуточно (сентябрь)", "не больше 15 мин", 15, "lower", True),
-    ("no_reply_24h", "Продажи", "Новые обращения без ответа человека за 24 часа", "%",
-     "60% (сентябрь, с лид-формами Facebook)", "не больше 5%", 5, "lower", False),
-    ("quote_touch", "Продажи", "Молчащие сметы с напоминанием в течение 30 часов", "%",
-     "0 из 21 (сметы с 16.09)", "100%", 100, "higher", True),
-    ("photos_back", "Продажи", "Прислали фото из тех, кого просили (без лид-форм Facebook)", "%",
-     "40–49%", "не меньше 55%", 55, "higher", False),
-    ("quote_after_photo", "Продажи", "Смета после фото, медиана в рабочее время", "ч",
-     "1,4 ч; 31–44% ждут дольше суток", "не больше 1 ч; дольше суток — не больше 10%", 1, "lower", False),
-    ("conversion", "Продажи", "Конверсия решённых обращений в заказ, когорта 45 дней", "%",
-     "16% (декабрь–август)", "20%", 20, "higher", True),
-    ("conversion_no_fb", "Продажи", "То же без лид-форм Facebook", "%",
-     "19% (декабрь–август)", "24%", 24, "higher", True),
-    ("no_reason", "Продажи", "Потери без причины: «Other» или пусто, без заметки", "%",
-     "60% всех 1 642 потерь (из них «Other» — 58%)", "не больше 10%", 10, "lower", False),
-    ("wip", "Мастерская", "Изделий в Lakeway и очереди On Deck", "шт.", "28 (всего с сумками и партнёрами — 39)",
-     "не больше 30", 30, "lower", True),
-    ("output_week", "Мастерская", "Выпуск в неделю против приёма", "шт.",
-     "около 9 против 8–13", "выпуск не меньше приёма, 10–12 в неделю", 10, "higher", False),
-    ("deadlines", "Мастерская", "Сроки соблюдены", "%", "9 из 14", "не меньше 85%", 85, "higher", False),
-    ("visit_cancel", "Мастерская", "Визиты, отменённые без переноса", "%", "22% (48% вместе с переносами)",
-     "не больше 10%", 10, "lower", False),
-    ("price_hour", "Цены", "Цена на плановый час в перетяжке, медиана", "$",
-     "около $32 на учтённый час", "не меньше $60", 60, "higher", False),
-    ("big_quote_conv", "Цены", "Конверсия смет от $1 200, когорта 45 дней", "%",
-     "25% (июнь–август)", "не меньше 30%", 30, "higher", False),
-    ("net_sales", "Деньги", "Чистые продажи в месяц вместе с оплатами мимо Square", "$",
-     "около $29–33 тыс.", "$35 тыс. и выше, декабрь — с поправкой на сезон", 35000, "higher", True),
-    ("square_coverage", "Деньги", "Платежи Square, которые есть в CRM", "%",
-     "82% (с 14.09)", "не меньше 98%", 98, "higher", False),
-    ("done_unpaid", "Деньги", "Выполненные без записанной оплаты старше 7 дней", "шт.",
-     "9 из 28 закрытых в CRM 14–29.09", "0", 0, "lower", False),
-    ("wasted_ads", "Каналы", "Расход на кампании без выигранных заказов за 45 дней", "$",
-     "около $1,7 тыс. в сентябре", "$0", 0, "lower", False),
-    ("call_source", "Каналы", "Источник указан у звонковых обращений", "%", "3%", "не меньше 70%", 70,
-     "higher", False),
-    ("reviews", "Каналы", "Новые настоящие отзывы в Google за месяц", "шт.",
-     "3–8", "7–12, не больше трёх в день на профиль", 7, "higher", False),
-    ("repeat_leads", "Каналы", "Обращения повторных клиентов и по рекомендациям за месяц", "шт.",
-     "около 9 (III квартал)", "не меньше 12", 12, "higher", False),
+# The tables «Каждую неделю» and «Раз в месяц» of the advisory doc's section «Метрики на каждую неделю»,
+# row for row. Base and target are the doc's own words (the base is the last measurement before the plan
+# started on 2026-10-07). Weekly rows are compared with the week before, monthly rows with 30 days earlier.
+# Rows in MANUAL are measured outside the CRM (Square, ad accounts, Google) or need inputs the CRM does not
+# hold yet; they arrive through data/scorecard_manual.json.
+SCORECARD = (  # key, cadence, area, label, unit, base, target, target value, better
+    ("sla_late", "week", "Продажи",
+     "Лиды, написавшие сами, без ответа в срок: 4 рабочих часа в окне пн–пт 9–18, вне окна — до 10:00", "%",
+     "41% (45 из 110, сентябрь)", "не больше 10%", 10, "lower"),
+    ("photo_reminder", "week", "Продажи", "Не прислали фото после запроса, и за 3 дня им ушло напоминание", "%",
+     "21% (34 из 163, июнь–сентябрь)", "не меньше 90%", 90, "higher"),
+    ("quote_late", "week", "Продажи", "Фото без сметы в течение 4 рабочих часов", "%",
+     "34% (146 из 428, август–сентябрь)", "не больше 10%", 10, "lower"),
+    ("wasted_ads", "week", "Реклама", "Расход на кампании без побед в 45-дневной когорте, в месяц", "$",
+     "≈$1,1–1,2 тыс.", "$0", 0, "lower"),
+    ("shop_p90", "week", "Мастерская", "P90 возраста изделий в очереди", "дн.",
+     "22,5 дня при выпуске ≈9 в неделю (07.10); приём до 21.10 завышен датами, внесёнными задним числом 15 и 23.09",
+     "не больше 21 дня при выпуске не меньше приёма", 21, "lower"),
+    ("done_unpaid", "week", "Деньги", "Done без записанной оплаты старше 7 дней", "шт.",
+     "9 из 28 закрытых в CRM 14–29.09", "0", 0, "lower"),
+    ("square_coverage", "week", "Деньги", "Покрытие денег Square в CRM", "%",
+     "81,7% (14.09–05.10)", "не меньше 98%", 98, "higher"),
+    ("owner_share", "week", "Команда", "Доля Dillon в действиях в CRM", "%",
+     "66% (272 из 409, 15.09–06.10)", "не больше 35%", 35, "lower"),
+    ("conversion", "month", "Продажи", "Конверсия когорт старше 45 дней без MP-форм", "%",
+     "27,6% (110 из 399, июнь–август)", "с ≈05.11 — не ниже базы родных когорт CRM", None, "higher"),
+    ("fb_reply_48h", "month", "Продажи", "FB-форма «Handbag – US»: ответ клиента за 48 часов", "%",
+     "9,3% (15 из 162)", "не меньше 25% при n ≥90", 25, "higher"),
+    ("followup_test", "month", "Продажи", "Ответ на дожим: тестовые недели против контроля, разница", "п.п.",
+     "50% с касанием против 23% без", "разница видна при n ≥50 смет на группу", None, "higher"),
+    ("no_reason", "month", "Продажи", "Проигрыши «Other» или без причины, без заметки", "%",
+     "60% (из них «Other» — 58%)", "не больше 10%", 10, "lower"),
+    ("contribution_hour", "month", "Цены", "Вклад на фактический час перетяжки", "$",
+     "нет данных (ориентир — $25–36 котировки на час, n<20)", "не меньше $45 после шага 1", 45, "higher"),
+    ("manual_hours", "month", "Мастерская", "Часы, внесённые в таймеры вручную", "%",
+     "47%", "не больше 10%", 10, "lower"),
+    ("visit_cancel", "month", "Мастерская", "Отменённые визиты без переносов и дублей", "%",
+     "≈22–29%", "не больше 20%", 20, "lower"),
+    ("reviews", "month", "Каналы", "Новые отзывы в Google за 30 дней; просьба — каждому заказу в Done", "шт.",
+     "3–8 в месяц; просьбу получили 0 из 32 заказов", "7–12 в месяц, просьба — 100%", 7, "higher"),
+    ("call_source", "month", "Каналы", "Звонки с указанным источником", "%",
+     "3% (6 из 197, Q3)", "не меньше 70% после колл-трекинга", 70, "higher"),
+    ("receipts", "month", "Деньги", "Поступления по всем каналам за 30 дней: Square, Chase, Zelle, чеки", "$",
+     "≥$40,8 тыс. в сентябре с налогом и чаевыми", "не меньше $40 тыс. в среднем за октябрь–декабрь", 40000,
+     "higher"),
 )
 MANUAL = {  # key -> where the Monday measurement comes from
-    "photos_back": "переписка в CRM", "quote_after_photo": "переписка и сметы в CRM",
-    "price_hour": "сметы и таймеры CRM, нужны плановые часы", "net_sales": "Square и оплаты мимо него",
-    "square_coverage": "Square против CRM", "wasted_ads": "Google Ads и Meta против заказов CRM",
-    "reviews": "Google, Local Falcon",
+    "wasted_ads": "Google Ads и Meta против побед CRM", "square_coverage": "Square против CRM",
+    "fb_reply_48h": "переписка лидов теста, с его запуска", "followup_test": "сметы тестовых и контрольных недель",
+    "contribution_hour": "таймеры и сметы CRM, нужны ставки труда", "reviews": "Google, Local Falcon",
+    "receipts": "Square, выписки Chase, Zelle и чеки",
 }
 SMALL_N = 20  # below this a rate jumps by five points or more from a single case
 FB = {"Facebook", "Instagram", "Facebook Ads"}
 DONE_STAGES = ("Done", "Delivered")
 MAIN_SHOP = ("Lakeway Shop", "On Deck")
+SHOP_LIMIT = 25  # items at Lakeway and in its On Deck queue before Big Reupholstery and RV go to partners
+OWNER = "Dillon"  # the CRM author whose share of actions the plan brings down
 PAYMENTS_COMPLETE = date(2026, 9, 14)  # from here on the CRM payment journal holds ~all Square payments
 
 
 def pct(part, whole):
     return round(100 * part / whole, 1) if whole else None
+
+
+def wilson(part, whole, z=1.96):
+    """95% confidence interval of a share, in percent."""
+    if not whole:
+        return None, None
+    p = part / whole
+    mid, half = p + z * z / (2 * whole), z * (p * (1 - p) / whole + z * z / (4 * whole * whole)) ** 0.5
+    scale = 1 + z * z / whole
+    return round(100 * (mid - half) / scale, 1), round(100 * (mid + half) / scale, 1)
+
+
+def percentile(values, q):
+    """Linear interpolation between the closest ranks, like numpy's default."""
+    values = sorted(values)
+    if not values:
+        return None
+    k = (len(values) - 1) * q
+    lo = int(k)
+    return values[lo] + (values[min(lo + 1, len(values) - 1)] - values[lo]) * (k - lo)
 
 
 def fb_form(o):
@@ -550,91 +572,53 @@ def last_full_week(rows, today):
     return max(done, key=lambda r: r["week"]) if done else None
 
 
-def finished_on(crm):
-    """order_id -> the day the work was handed over: the earliest of completed_at, left_shop_at,
-    the first move to Done or Delivered, and the day of a delivery visit that took place."""
-    days = defaultdict(list)
-    for o in crm.orders:
-        days[o["order_id"]] += [local_day(o.get("completed_at")), local_day(o.get("left_shop_at"))]
-    for h in crm.t["stage_history"] or []:
-        if h["to_stage"] in DONE_STAGES:
-            days[h["order_id"]].append(local_day(h["effective_at"]))
-    for a in crm.t["appointments"] or []:
-        if a["type"] == "Delivery" and a["status"] == "done":
-            days[a["order_id"]].append(local_day(a["scheduled_at"]))
-    return {k: min(d for d in v if d) for k, v in days.items() if any(v)}
+def typed_by_hand(t):
+    """Timer starts and stops typed in by hand are whole minutes; a running timer records milliseconds."""
+    return bool(t) and t[17:19] == "00" and not t[19:20] == "."
 
 
 def scorecard_values(crm):
-    """key -> (value, n, period) for the rows the CRM measures, as of crm.today."""
+    """key -> (value, n, note) for the rows the CRM measures, as of crm.today."""
     today, values = crm.today, {}
-    week = last_full_week(crm.t.get("agg_first_reply_weekly"), today)
-    if week:
-        label = f"неделя с {day(week['week']):%d.%m}"
-        minutes = week.get("median_minutes_day")
-        values["first_reply"] = (round(minutes) if minutes is not None else None, week.get("leads_day"), label)
-        values["no_reply_24h"] = (pct(week["leads"] - (week.get("replied_24h") or 0), week["leads"]),
-                                  week["leads"], label)
-    week = last_full_week(crm.t.get("agg_quote_followup_weekly"), today)
-    if week:
-        values["quote_touch"] = (pct(week.get("touched_30h") or 0, week.get("silent_24h")),
-                                 week.get("silent_24h"), f"сметы недели с {day(week['week']):%d.%m}")
 
-    def conv(orders):
-        won = sum(o["won"] for o in orders)
-        decided = won + sum(o["status"] == "lost" for o in orders)
-        return pct(won, decided), decided
-    first, last = today - timedelta(days=74), today - timedelta(days=45)
-    cohort = [o for o in crm.orders if o["created"] and first <= o["created"] <= last]
-    label = f"обращения {first:%d.%m}–{last:%d.%m}"
-    values["conversion"] = (*conv(cohort), label)
-    values["conversion_no_fb"] = (*conv([o for o in cohort if not fb_form(o)]), label)
-    values["big_quote_conv"] = (*conv([o for o in cohort if (o["quote"] or 0) >= 1200]), label)
+    def weekly(name, part, whole, note):
+        week = last_full_week(crm.t.get(name), today)
+        if week:
+            return pct(week.get(part) or 0, week.get(whole)), week.get(whole), note(week, f"неделя с {day(week['week']):%d.%m}")
+        return None, None, None
+    values["sla_late"] = weekly(
+        "agg_sla_weekly", "late", "leads",
+        lambda w, label: label + (f"; пришли в окне — {w['leads_window']}, медиана ответа в окне "
+                                  f"{round(w['median_minutes_window'])} мин" if w.get("median_minutes_window") is not None else ""))
+    values["photo_reminder"] = weekly(
+        "agg_photo_reminder_weekly", "reminded", "silent",
+        lambda w, label: f"запросы фото, {label}; без лид-форм Facebook" + (f"; ещё {w['pending']} моложе 3 дней" if w.get("pending") else ""))
+    values["quote_late"] = weekly(
+        "agg_quote_photo_weekly", "late", "photos",
+        lambda w, label: f"фото, {label}; из них без сметы вообще — {w.get('no_quote') or 0}")
 
-    month_ago = today - timedelta(days=30)
-    in_month = lambda d: d is not None and month_ago < d <= today
-    lost = [o for o in crm.orders if o["status"] == "lost" and in_month(local_day(o["stage_changed_at"]))]
-    blank = sum(1 for o in lost if o.get("no_order_reason") in (None, "", "Other")
-                and not (o.get("no_order_note") or "").strip())
-    values["no_reason"] = (pct(blank, len(lost)), len(lost), "закрытые за 30 дней")
+    actions = [r for r in crm.t.get("agg_actions_weekly") or [] if r.get("week") and day(r["week"]) + timedelta(days=7) <= today]
+    if actions:
+        week = max(r["week"] for r in actions)
+        rows = [r for r in actions if r["week"] == week]
+        total = sum(r.get("actions") or 0 for r in rows)
+        mine = sum(r.get("actions") or 0 for r in rows if r.get("author") == OWNER)
+        values["owner_share"] = (pct(mine, total), total, f"неделя с {day(week):%d.%m}; действия с автором в журнале CRM")
 
-    # In the shop: received and not yet out, unless the order was lost. The limit is for the Lakeway workshop
-    # and its On Deck queue; handbags at home and partner shops have their own hands.
+    # In the shop: received and not yet out, unless the order was lost.
     shop = lambda o, d: (local_day(o.get("received_at_shop")) or date.max) <= d < (local_day(o.get("left_shop_at")) or date.max)
     held = [o for o in crm.orders if o["status"] != "lost" and shop(o, today)]
-    values["wip"] = (sum(1 for o in held if o.get("shop") in MAIN_SHOP), None,
-                     f"сейчас; всего с сумками и партнёрами — {len(held)}")
-    monday = week_start(today) - timedelta(weeks=1)
-    in_week = lambda d: d is not None and monday <= d < monday + timedelta(weeks=1)
-    out = sum(1 for o in crm.orders if o["won"] and in_week(local_day(o.get("left_shop_at"))))
-    took = sum(1 for o in crm.orders if in_week(local_day(o.get("received_at_shop"))))
-    values["output_week"] = (out, None, f"неделя с {monday:%d.%m}, принято {took}")
-    values["output_week_intake"] = took
-
-    # A deadline counts once its outcome is known: on the hand-over day if on time, the day after it if not.
-    finished, met, late, overdue = finished_on(crm), 0, 0, 0
-    for o in crm.orders:
-        deadline = day(o.get("deadline"))
-        if not deadline or o["status"] == "lost":
-            continue
-        done = finished.get(o["order_id"])
-        done = done if done and done <= today else None
-        if done and done <= deadline:
-            met += in_month(done)
-        elif in_month(deadline + timedelta(days=1)):
-            late += bool(done)
-            overdue += not done
-    notes = [f"{met} из {met + late} в срок за 30 дней" if met + late else "сданных со сроком за 30 дней нет"]
-    if overdue:
-        notes.append(f"ещё {overdue} просрочено и не выдано")
-    values["deadlines"] = (pct(met, met + late), met + late, "; ".join(notes))
-
-    # A reschedule shows up as a cancelled visit plus another visit of the same type for the order.
-    appointments = crm.t["appointments"] or []
-    kept = {(a["order_id"], a["type"]) for a in appointments if a["status"] in ("done", "scheduled")}
-    visits = [a for a in appointments if a["status"] in ("done", "cancelled") and in_month(local_day(a["scheduled_at"]))]
-    dropped = sum(a["status"] == "cancelled" and (a["order_id"], a["type"]) not in kept for a in visits)
-    values["visit_cancel"] = (pct(dropped, len(visits)), len(visits), "визиты за 30 дней; перенос на другое время не считается")
+    ages = [(today - local_day(o["received_at_shop"])).days for o in held]
+    p90 = percentile(ages, 0.9)
+    since = today - timedelta(weeks=4)
+    in_window = lambda d: d is not None and since < d <= today
+    out = sum(1 for o in crm.orders if o["won"] and in_window(local_day(o.get("left_shop_at"))))
+    took = sum(1 for o in crm.orders if in_window(local_day(o.get("received_at_shop"))))
+    main = sum(1 for o in held if o.get("shop") in MAIN_SHOP)
+    values["shop_p90"] = (round(p90, 1) if p90 is not None else None, len(held),
+                          f"сейчас; Lakeway и On Deck — {main} при лимите {SHOP_LIMIT}; "
+                          f"за 4 недели выдано {out}, принято {took}")
+    values["shop_keeps_up"] = out >= took
 
     # Only work closed in the CRM itself (a move to Done or Delivered in the stage history) once the payment
     # journal became complete; orders imported from Monday.com carry no payment rows at all.
@@ -650,12 +634,37 @@ def scorecard_values(crm):
                  and PAYMENTS_COMPLETE <= closed.get(o["order_id"], date.min) <= cutoff)
     values["done_unpaid"] = (unpaid, None, f"закрыты в CRM с {PAYMENTS_COMPLETE:%d.%m} и раньше чем 7 дней назад")
 
-    recent = [o for o in crm.orders if in_month(o["created"])]
-    calls = [o for o in recent if o.get("came_via") == "Phone Call"]
+    first, last = today - timedelta(days=74), today - timedelta(days=45)
+    cohort = [o for o in crm.orders if o["created"] and first <= o["created"] <= last and o.get("came_via") != "MP Form"]
+    won = sum(o["won"] for o in cohort)
+    decided = won + sum(o["status"] == "lost" for o in cohort)
+    lo, hi = wilson(won, decided)
+    values["conversion"] = (pct(won, decided), decided, f"обращения {first:%d.%m}–{last:%d.%m}"
+                            + (f"; 95% ДИ {lo:.1f}–{hi:.1f}%".replace(".", ",") if lo is not None else ""))
+
+    month_ago = today - timedelta(days=30)
+    in_month = lambda d: d is not None and month_ago < d <= today
+    lost = [o for o in crm.orders if o["status"] == "lost" and in_month(local_day(o["stage_changed_at"]))]
+    blank = sum(1 for o in lost if o.get("no_order_reason") in (None, "", "Other")
+                and not (o.get("no_order_note") or "").strip())
+    values["no_reason"] = (pct(blank, len(lost)), len(lost), "закрытые за 30 дней")
+
+    timers = [w for w in crm.t["work_time"] or [] if w.get("hours") and in_month(local_day(w.get("started_at")))]
+    by_hand = [w for w in timers if typed_by_hand(w.get("started_at")) and typed_by_hand(w.get("stopped_at"))]
+    hours, typed = sum(w["hours"] for w in timers), sum(w["hours"] for w in by_hand)
+    values["manual_hours"] = (pct(typed, hours), len(timers),
+                              f"за 30 дней: {round(typed):g} ч из {round(hours):g} ч" if hours else "за 30 дней")
+
+    # A reschedule shows up as a cancelled visit plus another visit of the same type for the order.
+    appointments = crm.t["appointments"] or []
+    kept = {(a["order_id"], a["type"]) for a in appointments if a["status"] in ("done", "scheduled")}
+    visits = [a for a in appointments if a["status"] in ("done", "cancelled") and in_month(local_day(a["scheduled_at"]))]
+    dropped = sum(a["status"] == "cancelled" and (a["order_id"], a["type"]) not in kept for a in visits)
+    values["visit_cancel"] = (pct(dropped, len(visits)), len(visits), "визиты за 30 дней; перенос на другое время не считается")
+
+    calls = [o for o in crm.orders if in_month(o["created"]) and o.get("came_via") == "Phone Call"]
     values["call_source"] = (pct(sum(1 for o in calls if split(o.get("sources")) != [UNSET]), len(calls)),
                              len(calls), "звонки за 30 дней")
-    values["repeat_leads"] = (sum(1 for o in recent if set(split(o.get("sources"))) & {"Prior Client", "Referral"}),
-                              None, "обращения за 30 дней")
     return values
 
 
@@ -669,10 +678,11 @@ def load_manual():
 
 def scorecard(tables, now, manual=None):
     current = scorecard_values(Crm(tables, now))
-    week_ago = scorecard_values(Crm(tables, now - timedelta(days=7)))
+    earlier = {"week": scorecard_values(Crm(tables, now - timedelta(days=7))),
+               "month": scorecard_values(Crm(tables, now - timedelta(days=30)))}
     manual = manual or {}
     rows = []
-    for key, area, label, unit, base, target, goal, better, main in SCORECARD:
+    for key, cadence, area, label, unit, base, target, goal, better in SCORECARD:
         if key in MANUAL:
             m = (manual.get("values") or {}).get(key) or {}
             value, n, note = m.get("value"), m.get("n"), m.get("note")
@@ -681,20 +691,21 @@ def scorecard(tables, now, manual=None):
             prev = (((manual.get("previous") or {}).get("values") or {}).get(key) or {}).get("value")
         else:
             value, n, note = current.get(key, (None, None, None))
-            prev = week_ago.get(key, (None,))[0]
+            prev = earlier[cadence].get(key, (None,))[0]
         ahead = (lambda a, b: a <= b) if better == "lower" else (lambda a, b: a >= b)
         status = None
         if value is not None and goal is not None:
             status = "ok" if ahead(value, goal) else "off"
-            if key == "output_week" and value < current["output_week_intake"]:
+            if key == "shop_p90" and not current["shop_keeps_up"]:
                 status = "off"  # output must also keep up with intake
         trend = None
         if value is not None and prev is not None:
-            close = abs(value - prev) < (2 if unit == "%" else 1e-9)  # under two points is weekly noise
+            close = abs(value - prev) < (2 if unit in ("%", "п.п.") else 1e-9)  # under two points is noise
             trend = "same" if close else "better" if ahead(value, prev) else "worse"
-        rows.append({"key": key, "area": area, "label": label, "unit": unit, "value": value, "n": n, "note": note,
-                     "prev": prev, "trend": trend, "base": base, "target": target, "status": status,
-                     "small": value is not None and n is not None and n < SMALL_N, "manual": key in MANUAL, "main": main})
+        rows.append({"key": key, "cadence": cadence, "area": area, "label": label, "unit": unit, "value": value,
+                     "n": n, "note": note, "prev": prev, "trend": trend, "base": base, "target": target,
+                     "status": status, "small": value is not None and n is not None and n < SMALL_N,
+                     "manual": key in MANUAL, "main": cadence == "week"})
     return rows
 
 

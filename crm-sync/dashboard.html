@@ -449,6 +449,8 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
     if (unit === "$") return money(v);
     if (unit === "мин") return num(v) + " мин";
     if (unit === "ч") return String(v).replace(".", ",") + " ч";
+    if (unit === "дн.") return String(v).replace(".", ",") + " дн.";
+    if (unit === "п.п.") return String(v).replace(".", ",") + " п.п.";
     return num(v);
   }
   function scorecardCard(sm) {
@@ -457,14 +459,14 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
     const full = Boolean(S.showAll.score);
     const list = full ? all : all.filter((r) => r.main);
     const body = h("div", { class: "rows" });
-    let area = null;
+    let cadence = null;
     for (const r of list) {
-      if (full && r.area !== area) { area = r.area; body.append(h("div", { class: "day" }, area)); }
+      if (full && r.cadence !== cadence) { cadence = r.cadence; body.append(h("div", { class: "day" }, cadence === "week" ? "Каждую неделю" : "Раз в месяц")); }
       const facts = [r.note, r.n != null ? "n = " + num(r.n) : null].filter(Boolean).join(" · ");
       const moved = r.trend === "same" ? "≈" : r.value > r.prev ? "▲" : "▼";
       body.append(h("div", { class: "metric" },
         h("div", { class: "what" },
-          h("span", { class: "t" + (r.main ? " main" : "") }, r.label),
+          h("span", { class: "t" + (r.main ? " main" : "") }, r.area + ". " + r.label),
           h("span", { class: "d" }, facts, r.small ? [" ", h("span", { class: "pill plain" }, "мало данных")] : null),
           h("span", { class: "d" }, `База: ${r.base} · цель: ${r.target}`)),
         h("div", { class: "val" },
@@ -474,10 +476,10 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
             " было " + metricValue(r.unit, r.prev)) : null)));
     }
     const measured = all.filter((r) => r.status);
-    return card("Метрики плана", `на цели ${measured.filter((r) => r.status === "ok").length} из ${measured.length} измеренных; изменение — к той же мере неделю назад`,
+    return card("Метрики плана", `на цели ${measured.filter((r) => r.status === "ok").length} из ${measured.length} измеренных; недельные — к прошлой неделе, месячные — к 30 дням раньше`,
       body,
-      full ? h("p", { class: "note" }, "«Неделя» — последняя полная неделя, пн–вс. Конверсия — доля заказов среди решённых обращений, созданных 45–74 дня назад. Разница меньше двух процентных пунктов — шум (≈). Строки без значения меряю вручную по понедельникам: Square, реклама, Google.") : null,
-      h("button", { class: "more", onclick: () => { S.showAll.score = !full; render(); } }, full ? "Только главные" : `Все метрики (${all.length})`));
+      full ? h("p", { class: "note" }, "«Неделя» — последняя полная неделя, пн–вс; рабочее окно — пн–пт 9–18 по Остину. Месячные — последние 30 дней; конверсия — доля побед среди решённых обращений, созданных 45–74 дня назад, без MP-форм. Разница меньше двух пунктов — шум (≈). Строки без значения меряю вручную по понедельникам: Square, реклама, Google; тесты — с их запуска.") : null,
+      h("button", { class: "more", onclick: () => { S.showAll.score = !full; render(); } }, full ? "Только недельные" : `Все метрики (${all.length})`));
   }
 
   function weeklyCard(sm) {

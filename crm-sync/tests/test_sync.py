@@ -209,13 +209,17 @@ class AnalyticsTest(unittest.TestCase):
                       ("Done", "Done", 10), ("Closed", "Archive / No Order", 12)]
             store.apply(run, "stages", [{"stage": n, "stage_group": g, "sort_order": i} for n, g, i in stages], "stage")
             orders = []
+            # Four Picked Up orders wait in the shop (26, 16, 8 and 5 days on 6 Oct); o3 came in and went out.
+            SHOP_IN = {2: "2026-09-10T15:00:00+00:00", 7: "2026-09-20T15:00:00+00:00", 12: "2026-09-28T15:00:00+00:00",
+                       17: "2026-10-01T15:00:00+00:00", 3: "2026-09-15T15:00:00+00:00"}
             for i, (stage, _, _) in enumerate(stages * 4):
                 orders.append({"order_id": f"o{i}", "order_no": 100 + i, "stage": stage, "step": "Quote Sent" if i % 2 else None,
                                "created_at": f"2026-09-{1 + i:02d}T15:00:00.123+00:00", "stage_changed_at": "2026-09-25T15:00:00.5+00:00",
                                "sources": "Yelp, Google Ads" if i % 3 else None, "work_types": "Car", "came_via": "Web Form",
                                "quote": 300 + i, "deadline": "2026-09-30" if stage == "Picked Up" else None,
                                "no_order_reason": "Price" if stage == "Closed" else None, "no_order_note": None, "item": "seat",
-                               "received_at_shop": None, "left_shop_at": None, "quote_max": None})
+                               "received_at_shop": SHOP_IN.get(i), "left_shop_at": "2026-10-01T20:00:00+00:00" if i == 3 else None,
+                               "shop": "Lakeway Shop" if i in (2, 7) else None, "quote_max": None})
             store.apply(run, "orders", orders, "order_id")
             store.apply(run, "payments", [{"order_id": "o3", "kind": "payment", "amount": 500, "tip": 20, "paid_at": "2026-10-02T17:00:00+00:00", "note": None},
                                           {"order_id": "o3", "kind": "material", "amount": -80, "tip": None, "paid_at": "2026-10-02T17:00:00+00:00", "note": None}],
@@ -224,7 +228,11 @@ class AnalyticsTest(unittest.TestCase):
             store.apply(run, "appointments", [{"order_id": "o1", "order_no": 101, "type": "Pickup", "scheduled_at": "2026-10-08T14:00:00+00:00", "status": "scheduled", "executor": "Driver"},
                                               {"order_id": "o6", "order_no": 106, "type": "Delivery", "scheduled_at": "2026-10-01T14:00:00+00:00", "status": "scheduled", "executor": "Driver"}],
                         ["order_id", "type", "scheduled_at"])
-            store.apply(run, "work_time", [{"order_id": "o3", "worker": "Мастер", "started_at": "2026-10-01T15:00:00+00:00", "hours": 4.5}], ["order_id", "worker", "started_at"])
+            store.apply(run, "work_time", [{"order_id": "o3", "worker": "Мастер", "started_at": "2026-10-01T15:00:00+00:00",
+                                           "stopped_at": "2026-10-01T19:30:00+00:00", "hours": 4.5},  # typed in by hand
+                                          {"order_id": "o3", "worker": "Мастер", "started_at": "2026-10-02T15:00:12.345+00:00",
+                                           "stopped_at": "2026-10-02T16:30:40.1+00:00", "hours": 1.5}],
+                        ["order_id", "worker", "started_at"])
             store.apply(run, "stage_history", [{"order_id": "o1", "to_stage": "Scheduled", "effective_at": "2026-09-03T15:00:00+00:00"}], ["order_id", "effective_at", "to_stage"])
             if with_aggregates:
                 store.apply(run, "agg_messages_weekly", [{"week": "2026-09-28", "n_in": 5, "n_out": 4, "n_auto": 2}], "week")
@@ -235,11 +243,16 @@ class AnalyticsTest(unittest.TestCase):
                 store.apply(run, "agg_site_totals", [{"scope": "all", "visits": 400, "orders": 9}], "scope")
                 for name in ("agg_site_sources", "agg_site_devices", "agg_site_landings"):
                     store.apply(run, name, [{"name": "google", "visits": 30, "orders": 1}], "name")
-                store.apply(run, "agg_first_reply_weekly", [
-                    {"week": "2026-09-21", "leads": 74, "leads_day": 49, "replied_24h": 26, "median_minutes_day": 75.4},
-                    {"week": "2026-09-28", "leads": 81, "leads_day": 57, "replied_24h": 24, "median_minutes_day": 37.7},
-                    {"week": "2026-10-05", "leads": 38, "leads_day": 32, "replied_24h": 10, "median_minutes_day": 126.8}], "week")
-                store.apply(run, "agg_quote_followup_weekly", [{"week": "2026-09-28", "quotes": 32, "silent_24h": 18, "touched_30h": 0}], "week")
+                store.apply(run, "agg_sla_weekly", [
+                    {"week": "2026-09-21", "leads": 30, "late": 12, "pending": 0, "leads_window": 14, "median_minutes_window": 121.6},
+                    {"week": "2026-09-28", "leads": 25, "late": 5, "pending": 0, "leads_window": 12, "median_minutes_window": 64.2},
+                    {"week": "2026-10-05", "leads": 9, "late": 1, "pending": 3, "leads_window": 6, "median_minutes_window": 30.0}], "week")
+                store.apply(run, "agg_photo_reminder_weekly", [{"week": "2026-09-28", "silent": 8, "reminded": 2, "pending": 1}], "week")
+                store.apply(run, "agg_quote_photo_weekly", [{"week": "2026-09-28", "photos": 40, "late": 10, "no_quote": 4, "pending": 0}], "week")
+                store.apply(run, "agg_actions_weekly", [
+                    {"week": "2026-09-21", "author": "Dillon", "actions": 50}, {"week": "2026-09-21", "author": "Tatiana", "actions": 50},
+                    {"week": "2026-09-28", "author": "Dillon", "actions": 90}, {"week": "2026-09-28", "author": "Tatiana", "actions": 10},
+                    {"week": "2026-10-05", "author": "Dillon", "actions": 7}], ["week", "author"])
             store.close()
             tables, last_run = analytics.load(Path(tmp) / "crm.sqlite")
         return analytics.build(tables, last_run, now=datetime(2026, 10, 6, 17, 0, tzinfo=timezone.utc), manual=manual)
@@ -265,28 +278,41 @@ class AnalyticsTest(unittest.TestCase):
         self.assertIsNone(summary["messages"])
         self.assertIsNone(summary["site"])
         self.assertEqual(summary["tables"]["orders"], 20)
-        reply = next(r for r in summary["scorecard"] if r["key"] == "first_reply")
-        self.assertEqual((reply["value"], reply["status"], reply["trend"]), (None, None, None))
+        sla = next(r for r in summary["scorecard"] if r["key"] == "sla_late")
+        self.assertEqual((sla["value"], sla["status"], sla["trend"]), (None, None, None))
 
     def test_scorecard(self):
-        manual = {"as_of": "2026-10-05", "values": {"net_sales": {"value": 31000}},
-                  "previous": {"as_of": "2026-09-28", "values": {"net_sales": {"value": 30000}}}}
+        manual = {"as_of": "2026-10-05", "values": {"receipts": {"value": 41000}},
+                  "previous": {"as_of": "2026-09-28", "values": {"receipts": {"value": 39000}}}}
         summary, _ = self.build(with_aggregates=True, manual=manual)
         rows = {r["key"]: r for r in summary["scorecard"]}
-        self.assertEqual(len(rows), len(summary["scorecard"]))
-        reply = rows["first_reply"]  # the week of 28 Sep: the week of 5 Oct is not over yet
-        self.assertEqual((reply["value"], reply["prev"], reply["trend"], reply["status"]), (38, 75, "better", "off"))
-        self.assertEqual(rows["no_reply_24h"]["value"], 70.4)
-        self.assertEqual((rows["quote_touch"]["value"], rows["quote_touch"]["small"]), (0, True))
-        deadlines = rows["deadlines"]  # four Picked Up orders were due 30 Sep and are still in the shop
-        self.assertIsNone(deadlines["value"])  # nothing handed over: no rate rather than a zero
-        self.assertIn("ещё 4 просрочено", deadlines["note"])
+        self.assertEqual((len(rows), len(summary["scorecard"])), (18, 18))
+        self.assertEqual(sum(r["main"] for r in rows.values()), 8)  # the weekly table
+        sla = rows["sla_late"]  # the week of 28 Sep: the week of 5 Oct is not over yet
+        self.assertEqual((sla["value"], sla["prev"], sla["trend"], sla["status"]), (20.0, 40.0, "better", "off"))
+        self.assertIn("медиана ответа в окне 64 мин", sla["note"])
+        self.assertEqual((rows["photo_reminder"]["value"], rows["photo_reminder"]["small"]), (25.0, True))
+        self.assertEqual(rows["quote_late"]["value"], 25.0)
+        owner = rows["owner_share"]
+        self.assertEqual((owner["value"], owner["n"], owner["prev"], owner["trend"]), (90.0, 100, 50.0, "worse"))
+        shop = rows["shop_p90"]  # ages 5, 8, 16 and 26 days
+        self.assertEqual((shop["value"], shop["n"], shop["status"]), (23.0, 4, "off"))
+        self.assertIn("Lakeway и On Deck — 2", shop["note"])
+        self.assertIn("за 4 недели выдано 1, принято 5", shop["note"])
+        self.assertEqual((rows["manual_hours"]["value"], rows["manual_hours"]["n"]), (75.0, 2))  # 4.5 of 6 hours
         self.assertEqual((rows["no_reason"]["value"], rows["no_reason"]["n"]), (0, 4))  # every loss names Price
-        sales = rows["net_sales"]
-        self.assertEqual((sales["value"], sales["trend"], sales["manual"]), (31000, "better", True))
-        self.assertTrue(sales["note"].startswith("замер 2026-10-05"))
+        conversion = rows["conversion"]  # nothing was created 45–74 days before 6 Oct
+        self.assertEqual((conversion["value"], conversion["status"]), (None, None))
+        receipts = rows["receipts"]
+        self.assertEqual((receipts["value"], receipts["trend"], receipts["manual"]), (41000, "better", True))
+        self.assertTrue(receipts["note"].startswith("замер 2026-10-05"))
         self.assertIsNone(rows["reviews"]["value"])
-        self.assertEqual(sum(r["main"] for r in rows.values()), 6)
+
+    def test_confidence_interval(self):
+        import analytics
+        self.assertEqual(analytics.wilson(110, 399), (23.4, 32.2))
+        self.assertEqual(analytics.wilson(0, 0), (None, None))
+        self.assertEqual(analytics.percentile([5, 8, 16, 26], 0.9), 23.0)
 
     def test_plain_dates_keep_their_day(self):
         import analytics
