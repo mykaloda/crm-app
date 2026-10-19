@@ -248,7 +248,7 @@ class AnalyticsTest(unittest.TestCase):
                     {"week": "2026-09-28", "leads": 25, "late": 5, "pending": 0, "leads_window": 12, "median_minutes_window": 64.2},
                     {"week": "2026-10-05", "leads": 9, "late": 1, "pending": 3, "leads_window": 6, "median_minutes_window": 30.0}], "week")
                 store.apply(run, "agg_photo_reminder_weekly", [{"week": "2026-09-28", "silent": 8, "reminded": 2, "pending": 1}], "week")
-                store.apply(run, "agg_quote_photo_weekly", [{"week": "2026-09-28", "photos": 40, "late": 10, "no_quote": 4, "pending": 0}], "week")
+                store.apply(run, "agg_quote_photo_weekly", [{"week": "2026-09-28", "photos": 40, "late": 10, "no_quote": 4, "pending": 2}], "week")
                 store.apply(run, "agg_actions_weekly", [
                     {"week": "2026-09-21", "author": "Dillon", "actions": 50}, {"week": "2026-09-21", "author": "Tatiana", "actions": 50},
                     {"week": "2026-09-28", "author": "Dillon", "actions": 90}, {"week": "2026-09-28", "author": "Tatiana", "actions": 10},
@@ -293,6 +293,8 @@ class AnalyticsTest(unittest.TestCase):
         self.assertIn("медиана ответа в окне 64 мин", sla["note"])
         self.assertEqual((rows["photo_reminder"]["value"], rows["photo_reminder"]["small"]), (25.0, True))
         self.assertEqual(rows["quote_late"]["value"], 25.0)
+        self.assertIn("ещё 2 ждут срока", rows["quote_late"]["note"])
+        self.assertNotIn("ждут срока", rows["sla_late"]["note"])
         owner = rows["owner_share"]
         self.assertEqual((owner["value"], owner["n"], owner["prev"], owner["trend"]), (90.0, 100, 50.0, "worse"))
         shop = rows["shop_p90"]  # ages 5, 8, 16 and 26 days

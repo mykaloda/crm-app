@@ -586,16 +586,20 @@ def scorecard_values(crm):
         if week:
             return pct(week.get(part) or 0, week.get(whole)), week.get(whole), note(week, f"неделя с {day(week['week']):%d.%m}")
         return None, None, None
+
+    # What came in on Friday evening or the weekend falls due on Monday, after the morning sync.
+    waiting = lambda w: f"; ещё {w['pending']} ждут срока — значение предварительное" if w.get("pending") else ""
     values["sla_late"] = weekly(
         "agg_sla_weekly", "late", "leads",
         lambda w, label: label + (f"; пришли в окне — {w['leads_window']}, медиана ответа в окне "
-                                  f"{round(w['median_minutes_window'])} мин" if w.get("median_minutes_window") is not None else ""))
+                                  f"{round(w['median_minutes_window'])} мин" if w.get("median_minutes_window") is not None else "")
+        + waiting(w))
     values["photo_reminder"] = weekly(
         "agg_photo_reminder_weekly", "reminded", "silent",
         lambda w, label: f"запросы фото, {label}; без лид-форм Facebook" + (f"; ещё {w['pending']} моложе 3 дней" if w.get("pending") else ""))
     values["quote_late"] = weekly(
         "agg_quote_photo_weekly", "late", "photos",
-        lambda w, label: f"фото, {label}; из них без сметы вообще — {w.get('no_quote') or 0}")
+        lambda w, label: f"фото, {label}; из них без сметы вообще — {w.get('no_quote') or 0}" + waiting(w))
 
     actions = [r for r in crm.t.get("agg_actions_weekly") or [] if r.get("week") and day(r["week"]) + timedelta(days=7) <= today]
     if actions:
