@@ -221,7 +221,7 @@ class AnalyticsTest(unittest.TestCase):
                                "received_at_shop": SHOP_IN.get(i), "left_shop_at": "2026-10-01T20:00:00+00:00" if i == 3 else None,
                                "shop": "Lakeway Shop" if i in (2, 7) else None, "quote_max": None})
             store.apply(run, "orders", orders, "order_id")
-            store.apply(run, "payments", [{"order_id": "o3", "kind": "payment", "amount": 500, "tip": 20, "paid_at": "2026-10-02T17:00:00+00:00", "note": None},
+            store.apply(run, "payments", [{"order_id": "o3", "kind": "payment", "amount": 500, "tip": 20, "tax": 35, "paid_at": "2026-10-02T17:00:00+00:00", "note": None},
                                           {"order_id": "o3", "kind": "material", "amount": -80, "tip": None, "paid_at": "2026-10-02T17:00:00+00:00", "note": None}],
                         ["order_id", "kind", "paid_at", "amount"])
             store.apply(run, "estimates", [{"order_id": "o1", "created_at": "2026-09-02T16:00:00+00:00", "sent_at": "2026-09-02T18:00:00+00:00"}], ["order_id", "created_at"])
@@ -260,6 +260,8 @@ class AnalyticsTest(unittest.TestCase):
     def test_builds_with_aggregates(self):
         summary, pipeline = self.build(with_aggregates=True)
         self.assertEqual(summary["kpi"]["mtd"], 500)
+        # $ per hour counts the shop's revenue: $500 received less $35 tax and $20 tip over 6 hours.
+        self.assertEqual(summary["workshop"]["work_types"][0]["per_hour"], 74)
         self.assertEqual(summary["monthly"][-1]["costs"], 80)
         self.assertEqual(summary["messages"]["reply_hours_median"], 1.26)
         self.assertEqual(summary["site"]["visits_90"], 400)

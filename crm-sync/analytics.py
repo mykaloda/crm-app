@@ -123,10 +123,13 @@ class Crm:
         self.stage_info = {s["stage"]: s for s in stages}
         self.stage_order = [s["stage"] for s in sorted(stages, key=lambda s: s["sort_order"] or 0)]
 
+        # paid is money received (amount includes 8.25% sales tax and tips); paid_net is the shop's revenue.
         self.paid = defaultdict(float)
+        self.paid_net = defaultdict(float)
         for p in tables["payments"] or []:
             if p["kind"] == "payment":
                 self.paid[p["order_id"]] += p["amount"] or 0
+                self.paid_net[p["order_id"]] += (p["amount"] or 0) - (p.get("tax") or 0) - (p.get("tip") or 0)
         quoted_by_estimate = {e["order_id"] for e in tables["estimates"] or [] if e["sent_at"]}
 
         self.orders = []
@@ -143,6 +146,7 @@ class Crm:
                 "quoted": (o["quote"] or 0) > 0 or o["order_id"] in quoted_by_estimate
                           or (o["step"] or "").startswith("Quote") or status in ("in_work", "done"),
                 "paid": self.paid.get(o["order_id"], 0.0),
+                "paid_net": self.paid_net.get(o["order_id"], 0.0),
             })
         self.by_id = {o["order_id"]: o for o in self.orders}
 
@@ -389,7 +393,7 @@ def workshop(crm):
         by_type[t]["hours"] += hours
         if o["paid"] > 0:
             by_type[t]["paid_hours"] += hours
-            by_type[t]["received"] += o["paid"]
+            by_type[t]["received"] += o["paid_net"]
     types = [{"work_type": t, "orders": v["orders"], "hours": round(v["hours"], 1),
               "hours_per_order": round(v["hours"] / v["orders"], 1),
               "per_hour": round(v["received"] / v["paid_hours"]) if v["paid_hours"] >= 1 else None}
