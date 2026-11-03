@@ -12,7 +12,8 @@ Output
   data/leads.csv              master table, every lead ever found (dedup memory)
   data/daily/YYYY-MM-DD.csv   only the leads that are new today
 
-Only the Python standard library is used. The API key is read from SGAI_API_KEY.
+Only the Python standard library is used. The API key is read from SGAI_API_KEY
+(or injected by the cloud proxy when stored as a network secret for api.scrapegraphai.com).
 """
 import argparse
 import csv
@@ -97,10 +98,9 @@ def prompt_for(item):
 
 # ---------------------------------------------------------------- ScrapeGraph
 def api_key():
-    key = os.environ.get("SGAI_API_KEY") or os.environ.get("SCRAPEGRAPH_API_KEY")
-    if not key:
-        sys.exit("SGAI_API_KEY is not set. Add it to the cloud environment's variables.")
-    return key
+    # SGAI_API_KEY from the environment, or a placeholder when the key is stored as a
+    # network secret and the egress proxy injects the real SGAI-APIKEY header.
+    return os.environ.get("SGAI_API_KEY") or os.environ.get("SCRAPEGRAPH_API_KEY") or "injected-by-proxy"
 
 
 def call(method, path, body=None, timeout=180):
