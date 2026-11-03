@@ -58,7 +58,7 @@ If any seating at {business} is torn or worn out, reply with a couple of photos 
         "subject": "Chair and lobby furniture repair for {business}",
         "body": """{greeting}
 
-I'm {me} from {intro} ({proof}). We reupholster lobby furniture, banquet and guest-room chairs, and restore leather pieces. We work in batches, so rooms and event spaces stay open.
+I'm {me} from {intro}. We reupholster lobby furniture, banquet and guest-room chairs, and restore leather pieces. We work in batches, so rooms and event spaces stay open.
 
 Could I stop by {business} for 15 minutes and look at the pieces that need work? The estimate is free.""",
     },
@@ -94,7 +94,7 @@ Send me a photo of one chair and I'll tell you what it would cost.""",
         "subject": "Seat and leather repair for your inventory",
         "body": """{greeting}
 
-I'm {me} from {intro} ({proof}). We repair torn, cracked and faded seats and interior leather in cars, RVs and boats - it helps used units sell faster and for more. Dealer and fleet pricing available.
+I'm {me} from {intro}. We repair torn, cracked and faded seats and interior leather in cars, RVs and boats - it helps used units sell faster and for more. Dealer and fleet pricing available.
 
 Open to a quick call this week?""",
     },
@@ -103,7 +103,7 @@ Open to a quick call this week?""",
         "subject": "Upholstery partner for your projects",
         "body": """{greeting}
 
-I'm {me} from {intro} ({proof}). When your clients have pieces they want to keep but refresh, we can be the workroom you send them to: reupholstery, leather repair and restoration. We offer designers trade pricing and a referral fee.
+I'm {me} from {intro}. When your clients have pieces they want to keep but refresh, we can be the workroom you send them to: reupholstery, leather repair and restoration. We offer designers trade pricing and a referral fee.
 
 Could I send you a few before-and-after photos of our work?""",
     },
@@ -210,6 +210,32 @@ def render(segment, business, contact_name=""):
     return subject, body
 
 
+# ---------------------------------------------------------------- HTML (how the email is actually sent)
+# Same look as Dillon's regular emails in Zoho: Verdana 10pt, Zoho signature "Main" (logo, name, phone, email),
+# then one small grey footer: services, proof, address (required by CAN-SPAM) and the opt-out line.
+FONT = "font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10pt"
+ORANGE = "rgb(245, 130, 32)"
+FOOTER = (
+    '<div style="font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 8pt; line-height: 1.6; color: #8a8a8a">'
+    f'<span style="color: {ORANGE}">Furniture · Leather · Handbags · Car, RV &amp; Boat · Commercial</span><br>'
+    "11+ years · 5,200+ pieces restored · Pickup &amp; delivery available<br>"
+    '3307B Ranch Rd 620 N, Austin, TX 78734 · '
+    f'<a href="https://lerega.com/?Email" style="color: {ORANGE}; text-decoration: none">lerega.com</a><br>'
+    "Not relevant for you? Just reply &quot;no&quot; and I won&#39;t write again."
+    "</div>"
+)
+
+
+def render_html(segment, business, contact_name=""):
+    import html
+    subject, text = render(segment, business, contact_name)
+    message = text.split("\n\n" + SIGNATURE.split("\n")[0].format(**SENDER) + "\n")[0]  # body without text signature
+    paras = "".join(f"<div>{html.escape(p, quote=False).replace(chr(10), '<br>')}<br></div><div><br></div>" for p in message.split("\n\n"))
+    signature = (Path(__file__).with_name("signature.html")).read_text(encoding="utf-8").strip()
+    body = f'<div><div style="{FONT}">{paras}{signature}<div><br></div>{FOOTER}</div></div>'
+    return subject, body
+
+
 def sent_emails():
     if not SENT_LOG.exists():
         return set()
@@ -226,8 +252,10 @@ def build_drafts(day):
             if not email or email.lower() in done or r.get("status") not in ("New", "Новый", ""):  # "Draft in Zoho" = already prepared
                 continue
             subject, body = render(r["segment"], r["name"], r.get("contact_name") or "")
+            _, html_body = render_html(r["segment"], r["name"], r.get("contact_name") or "")
             drafts.append({"name": r["name"], "segment": r["segment"], "line": r["line"],
-                           "from": SENDER["from"], "to": email, "subject": subject, "body": body})
+                           "from": SENDER["from"], "to": email, "subject": subject, "body": body,
+                           "html": html_body})
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     path = OUT_DIR / f"drafts-{day.isoformat()}.json"
     path.write_text(json.dumps(drafts, indent=2, ensure_ascii=False), encoding="utf-8")
