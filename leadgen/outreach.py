@@ -201,7 +201,8 @@ def clean_business(name):
 def render(segment, business, contact_name=""):
     t = TEMPLATES[segment]
     business = clean_business(business)
-    greeting = f"Hi {contact_name}," if contact_name else f"Hi {business} team,"
+    team = business[4:] if business.startswith("The ") else business
+    greeting = f"Hi {contact_name}," if contact_name else f"Hi {team} team,"
     fill = dict(business=business, greeting=greeting, me=SENDER["name"], intro=INTRO, proof=PROOF)
     subject = t["subject"].format(**fill)
     body = t["body"].format(**fill)
@@ -222,7 +223,7 @@ def build_drafts(day):
     with MASTER.open(encoding="utf-8") as f:
         for r in csv.DictReader(f):
             email = (r.get("email") or "").strip()
-            if not email or email.lower() in done or r.get("status") not in ("New", "Новый", ""):
+            if not email or email.lower() in done or r.get("status") not in ("New", "Новый", ""):  # "Draft in Zoho" = already prepared
                 continue
             subject, body = render(r["segment"], r["name"], r.get("contact_name") or "")
             drafts.append({"name": r["name"], "segment": r["segment"], "line": r["line"],

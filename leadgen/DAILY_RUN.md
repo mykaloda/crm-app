@@ -48,10 +48,10 @@ python3 leadgen/find_leads.py search
    Две компании с одним ящиком — письмо только одной.
 2. Записать найденное в `data/leads.csv` (`email`, `contact_name` — только если имя явно указано у адреса).
 3. `python3 leadgen/outreach.py drafts` → `data/outreach/drafts-$DAY.json`.
-4. **Ничего не отправлять.** Отправка — только после явного «да» владельца в этой сессии:
-   Zoho Mail через Zapier (`zoho_mail_send_email`, connection `023dfe63-f6a5-84f4-b080-f3cebd8b4a6b`,
-   `fromAddress` из черновика, `mailFormat: plaintext`), по одному письму, затем
-   `python3 leadgen/outreach.py log sent.json` и статус лида «Письмо отправлено».
+4. **Ничего не отправлять.** Каждое письмо положить черновиком в Zoho Mail через Zapier:
+   `zoho_mail_create_draft`, connection `023dfe63-f6a5-84f4-b080-f3cebd8b4a6b`, `accountId` `643277000000008002`,
+   `fromAddress` из черновика, `mailFormat: plaintext`. Статус лида — `Draft in Zoho`, id черновика — в drafts-$DAY.json.
+   Отправляет владелец сам из папки «Черновики» Zoho (dillon@lerega.com).
 
 ## 4. Google-таблица
 
@@ -74,7 +74,7 @@ git add data leadgen && git commit -m "Leads $DAY: N new" && git push -u origin 
 Последнее сообщение сессии (оно приходит владельцу push-уведомлением), по-русски, коротко:
 
 ```
-Лиды на <дата>: N новых (Коммерция X, Мебель Y, Сумки Z). Писем готово к отправке: K — ответьте «отправляй», чтобы отправить.
+Лиды на <дата>: N новых (Коммерция X, Мебель Y, Сумки Z). Черновиков в Zoho: K — проверьте и отправьте из папки «Черновики».
 Топ-3: <компания — город — что предложить>.
 Таблица: <ссылка на Google Sheet>
 ```

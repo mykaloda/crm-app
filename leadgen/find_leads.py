@@ -308,7 +308,7 @@ def sheet_csv(day):
     for r in rows:
         r = dict(r, **{k: v for k, v in master.get(r["name"], {}).items() if v})  # latest email/status
         subject, body = outreach.render(r["segment"], r["name"], r.get("contact_name") or "")
-        r = dict(r, line=LINE_RU.get(r["line"], r["line"]), status="Новый" if r["status"] == "New" else r["status"],
+        r = dict(r, line=LINE_RU.get(r["line"], r["line"]), status={"New": "Новый", "Draft in Zoho": "Черновик в Zoho", "Sent": "Письмо отправлено"}.get(r["status"], r["status"]),
                  email_subject=subject, email_body=body)
         w.writerow([r.get(k, "") for k in SHEET_HEADERS])
     return buf.getvalue()
