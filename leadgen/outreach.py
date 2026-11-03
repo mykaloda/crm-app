@@ -46,7 +46,7 @@ OPT_OUT = 'Not relevant for you? Just reply "no" and I won\'t write again.'
 TEMPLATES = {
     "restaurant_bar": {
         "ru": "Рестораны и бары: кабинки и барные стулья, ремонт без закрытия.",
-        "subject": "Worn booths at {business}? We fix them after hours",
+        "subject": "Worn seating at {business}? We fix it after hours",
         "body": """{greeting}
 
 I'm {me} from {intro}. We repair and reupholster restaurant booths, banquettes and bar stools - overnight or on your closed day, so you don't lose a service.

@@ -17,7 +17,7 @@
 ### 1. Рестораны и бары: кабинки и барные стулья, ремонт без закрытия. `restaurant_bar`
 
 ```
-Subject: Worn booths at {Business}? We fix them after hours
+Subject: Worn seating at {Business}? We fix it after hours
 
 Hi {Business} team,
 
