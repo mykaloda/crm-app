@@ -198,7 +198,7 @@ class ClientTest(unittest.TestCase):
 class AnalyticsTest(unittest.TestCase):
     """The dashboard builds from a small store, with and without the message and site aggregates."""
 
-    def build(self, with_aggregates, manual=None):
+    def build(self, with_aggregates, manual=None, spend=None):
         import analytics
         from store import Store
         from datetime import datetime, timezone
@@ -253,9 +253,12 @@ class AnalyticsTest(unittest.TestCase):
                     {"week": "2026-09-21", "author": "Dillon", "actions": 50}, {"week": "2026-09-21", "author": "Tatiana", "actions": 50},
                     {"week": "2026-09-28", "author": "Dillon", "actions": 90}, {"week": "2026-09-28", "author": "Tatiana", "actions": 10},
                     {"week": "2026-10-05", "author": "Dillon", "actions": 7}], ["week", "author"])
+                store.apply(run, "agg_order_channel", [
+                    {"order_id": "o3", "order_no": 103, "channel_group": "Google Ads", "channel": "Google Ads", "campaign": "Maps-Austin (PMax)"},
+                    {"order_id": "o1", "order_no": 101, "channel_group": "Лид-площадки", "channel": "Yelp", "campaign": None}], "order_id")
             store.close()
             tables, last_run = analytics.load(Path(tmp) / "crm.sqlite")
-        return analytics.build(tables, last_run, now=datetime(2026, 10, 6, 17, 0, tzinfo=timezone.utc), manual=manual)
+        return analytics.build(tables, last_run, now=datetime(2026, 10, 6, 17, 0, tzinfo=timezone.utc), manual=manual, spend=spend)
 
     def test_builds_with_aggregates(self):
         summary, pipeline = self.build(with_aggregates=True)
@@ -311,6 +314,43 @@ class AnalyticsTest(unittest.TestCase):
         self.assertEqual((receipts["value"], receipts["trend"], receipts["manual"]), (41000, "better", True))
         self.assertTrue(receipts["note"].startswith("замер 2026-10-05"))
         self.assertIsNone(rows["reviews"]["value"])
+
+    def test_channels(self):
+        spend = {"months": {"2026-10": {"platforms": ["google"], "rows": [
+            {"platform": "google", "channel": "Google Ads", "campaign": "Maps-Austin (PMax)", "spend": 100},
+            {"platform": "google", "channel": "Google Ads", "campaign": "Training", "spend": 20}]}}}
+        summary, _ = self.build(with_aggregates=True, spend=spend)
+        ch = summary["channels"]
+        self.assertEqual(ch["months"], ["2026-09", "2026-10"])
+        october = {(r["channel"], r["campaign"]): r for r in ch["views"]["2026-10"]}
+        google = october[("Google Ads", None)]
+        # o3 paid $500 on 2 Oct: $445 after tax and tip, less $80 of material and $120 of Google spend.
+        self.assertEqual((google["received"], google["costs"], google["spend"], google["contribution"]), (445, 80, 120, 245))
+        self.assertEqual(google["orders_paid"], 1)
+        self.assertEqual(october[("Google Ads", "Training")]["spend"], 20)  # spend with no leads still shows
+        september = {(r["channel"], r["campaign"]): r for r in ch["views"]["2026-09"]}
+        self.assertEqual((september[("Google Ads", None)]["leads"], september[("Google Ads", None)]["won"]), (1, 1))
+        self.assertIsNone(september[("Google Ads", None)]["spend"])  # nobody recorded September: unknown, not zero
+        self.assertIsNone(ch["views"]["all"][0]["spend"])
+        yelp = september[("Yelp", None)]
+        self.assertEqual((yelp["spend"], yelp["waiting"]), (None, 301))  # o1 is scheduled, quoted $301
+        unknown = september[("Источник не указан", None)]
+        self.assertEqual((unknown["leads"], unknown["spend"]), (18, 0))  # the other September orders
+        self.assertIn("Yelp", ch["spend_unknown"])
+        summary, _ = self.build(with_aggregates=False)
+        self.assertIsNone(summary["channels"])
+
+    def test_spend_file(self):
+        import spend
+        doc = spend.set_month({}, "2026-10", "meta", [{"campaign": "leadform - Handbag - US", "spend": 10.004},
+                                                      {"campaign": "Something new", "spend": 5}], "test")
+        doc = spend.set_month(doc, "2026-10", "google", [{"campaign": "24106203053", "spend": 7}, {"campaign": 24106203053, "spend": 1}])
+        doc = spend.set_month(doc, "2026-10", "meta", [{"campaign": "leadform - Handbag - US", "spend": 12}])  # replaces
+        rows = {(r["channel"], r["campaign"]): r["spend"] for r in doc["months"]["2026-10"]["rows"]}
+        self.assertEqual(rows, {("Meta: форма сумок", None): 12, ("Google Ads", "furniture (основа)"): 8})
+        self.assertEqual(doc["months"]["2026-10"]["platforms"], ["google", "meta"])
+        with self.assertRaises(ValueError):
+            spend.set_month(doc, "2026-10", "tiktok", [])
 
     def test_confidence_interval(self):
         import analytics

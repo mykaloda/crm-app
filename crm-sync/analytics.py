@@ -26,9 +26,19 @@ REQUIRED = ("orders", "stages", "stage_history", "payments", "estimates", "appoi
 AGGREGATES = ("agg_messages_weekly", "agg_messages_channels", "agg_messages_replies", "agg_messages_waiting",
               "agg_sla_weekly", "agg_photo_reminder_weekly", "agg_quote_photo_weekly", "agg_actions_weekly",
               "agg_site_weekly", "agg_site_totals",
-              "agg_site_sources", "agg_site_devices", "agg_site_services", "agg_site_landings")
+              "agg_site_sources", "agg_site_devices", "agg_site_services", "agg_site_landings",
+              "agg_order_channel")
 MIGRATED_NOTE = "Перенесено из Monday"  # payments copied over from Monday.com
 UNSET = "(не указано)"
+
+# Every order since CHANNELS_FROM sits in exactly one channel (agg_order_channel); older orders are one bucket.
+CHANNELS_FROM = date(2026, 8, 1)
+CHANNEL_MONTHS_FROM = "2026-09"  # payments are complete in the CRM from September 2026
+CHANNEL_GROUPS = ("Google Ads", "Meta Ads", "ChatGPT Ads", "Лид-площадки", "Органика", "Повторные и рекомендации",
+                  "Не указан", "Старые заказы")
+OLD_CHANNEL = ("Старые заказы", "Старые заказы (до августа)")
+NO_CHANNEL = ("Не указан", "Источник не указан")
+COST_KINDS = ("material", "outsource", "shipping")  # money paid out, stored as negative amounts
 
 # How long an order may sit in a stage before it counts as stuck.
 STUCK_DAYS = {"New Lead": 7, "Under Review": 2, "Wait": 21, "Material - Our Side": 14,
@@ -717,6 +727,112 @@ def scorecard(tables, now, manual=None):
     return rows
 
 
+def load_spend():
+    """Ad and lead-platform spend by month (see spend.py): {"months": {"YYYY-MM": {"platforms", "rows"}}}."""
+    try:
+        return json.loads((data_dir() / "ad_spend.json").read_text())
+    except (OSError, ValueError):
+        return {}
+
+
+def channel_platform(group, channel):
+    """Where a channel's spend is recorded; None for channels nobody pays for."""
+    return {"Google Ads": "google", "Meta Ads": "meta", "ChatGPT Ads": "chatgpt"}.get(group) or \
+        (channel.lower() if group == "Лид-площадки" else None)
+
+
+def channels(crm, spend):
+    """Leads, orders, money received and spend per channel, by calendar month and since CHANNEL_MONTHS_FROM.
+
+    Leads count in the month they came in; money and costs in the month they were paid, whatever
+    the lead's month. Spend nobody recorded is None, not zero.
+    """
+    where = {r["order_id"]: (r["channel_group"], r["channel"], r["campaign"]) for r in crm.t.get("agg_order_channel") or []}
+    if not where:
+        return None
+
+    def channel_of(o):
+        if o["order_id"] in where:
+            return where[o["order_id"]]
+        old = o["created"] and o["created"] < CHANNELS_FROM
+        return (*(OLD_CHANNEL if old else NO_CHANNEL), None)
+
+    of_order = {o["order_id"]: channel_of(o) for o in crm.orders}
+    months = [k for k in months_back(crm.today, 24) if k >= CHANNEL_MONTHS_FROM]
+    views = {k: defaultdict(Counter) for k in months + ["all"]}
+
+    def add(month, group, channel, campaign, **values):
+        if month not in months:
+            return
+        for view in (month, "all"):
+            for key in ((group, channel, None),) + (((group, channel, campaign),) if group == "Google Ads" and campaign else ()):
+                views[view][key].update(values)
+
+    for o in crm.orders:
+        month = o["created"].strftime("%Y-%m") if o["created"] else None
+        add(month, *of_order[o["order_id"]], leads=1, won=int(o["won"]))
+    paid_orders = {k: defaultdict(set) for k in views}
+    for p in crm.t["payments"] or []:
+        d = local_day(p["paid_at"])
+        month = d.strftime("%Y-%m") if d else None
+        group, channel, campaign = of_order.get(p["order_id"]) or (*NO_CHANNEL, None)
+        if p["kind"] == "payment":
+            add(month, group, channel, campaign, received=(p["amount"] or 0) - (p.get("tax") or 0) - (p.get("tip") or 0),
+                costs=p.get("fee") or 0)
+            if month in months:
+                for view in (month, "all"):
+                    paid_orders[view][(group, channel, None)].add(p["order_id"])
+        elif p["kind"] in COST_KINDS:
+            add(month, group, channel, campaign, costs=-(p["amount"] or 0))
+
+    loaded = defaultdict(set)  # view -> platforms whose spend is recorded for every month of the view
+    for month in months:
+        m = (spend.get("months") or {}).get(month) or {}
+        loaded[month] = set(m.get("platforms") or [])
+        for r in m.get("rows") or []:
+            group = next((g for g in CHANNEL_GROUPS if channel_platform(g, r["channel"]) == r["platform"]), None)
+            if group:
+                add(month, group, r["channel"], r.get("campaign"), spend=r["spend"] or 0)
+    loaded["all"] = set.intersection(*(loaded[m] for m in months)) if months else set()
+
+    # Money still to come per channel: agreed orders not yet paid in full, and finished orders with no payment.
+    waiting = Counter()
+    for o in crm.orders:
+        group, channel, _ = of_order[o["order_id"]]
+        if o["status"] == "in_work":
+            waiting[channel] += max((o["quote"] or 0) - o["paid_net"], 0)
+        elif o["status"] == "done" and o["paid"] <= 0 and (local_day(o["stage_changed_at"]) or date.min) >= \
+                date.fromisoformat(CHANNEL_MONTHS_FROM + "-01"):
+            waiting[channel] += o["quote"] or 0
+
+    out = {}
+    for view, rows in views.items():
+        table = []
+        for (group, channel, campaign), c in rows.items():
+            platform = channel_platform(group, channel)
+            spent = c["spend"] if platform is None or platform in loaded[view] else None
+            if platform is None:
+                spent = 0
+            row = {"group": group, "channel": channel, "campaign": campaign, "leads": c["leads"], "won": c["won"],
+                   "received": money(c["received"]), "costs": money(c["costs"]),
+                   "spend": money(spent) if spent is not None else None,
+                   "per_lead": money(spent / c["leads"]) if spent and c["leads"] else None,
+                   "per_win": money(spent / c["won"]) if spent and c["won"] else None,
+                   "contribution": money(c["received"] - c["costs"] - spent) if spent is not None else None}
+            if campaign is None:
+                row["orders_paid"] = len(paid_orders[view][(group, channel, None)])
+                row["waiting"] = money(waiting[channel])
+            table.append(row)
+        order = {g: i for i, g in enumerate(CHANNEL_GROUPS)}
+        rank = {r["channel"]: (-r["received"], -r["leads"], r["channel"]) for r in table if r["campaign"] is None}
+        table.sort(key=lambda r: (order.get(r["group"], 99), rank[r["channel"]], r["campaign"] is not None,
+                                  -r["received"], -r["leads"], r["campaign"] or ""))
+        out[view] = [r for r in table if r["leads"] or r["received"] or r["costs"] or r["spend"]]
+    unknown = sorted({r["channel"] for rows in out.values() for r in rows if r["spend"] is None})
+    return {"months": months, "views": out, "spend_unknown": unknown, "spend_as_of": spend.get("as_of"),
+            "from": CHANNELS_FROM.isoformat()}
+
+
 def attention_row(o, reason, detail=None):
     return {"order_no": o["order_no"], "reason": reason, "detail": detail, "stage": o["stage"], "step": o["step"],
             "days_in_stage": o["days_in_stage"], "work_types": o["work_types"], "item": o["item"],
@@ -748,7 +864,7 @@ def attention_list(crm, missed):
     return rows
 
 
-def build(tables, run, now=None, manual=None):
+def build(tables, run, now=None, manual=None, spend=None):
     now = now or datetime.now(timezone.utc)
     crm = Crm(tables, now)
     upcoming, missed = appointments(crm)
@@ -787,6 +903,7 @@ def build(tables, run, now=None, manual=None):
         "done_unpaid": sum(1 for o in crm.orders if o["status"] == "done" and o["paid"] <= 0
                            and native and o["created"] and o["created"] >= local_day(min(native))),
         "scorecard": scorecard(tables, now, manual),
+        "channels": channels(crm, spend or {}),
     }
     pipeline = {
         "generated_at": summary["generated_at"],
@@ -806,7 +923,7 @@ def main():
     tables, run = load(data_dir() / "crm.sqlite")
     if not tables["orders"]:
         sys.exit("no orders in data/crm.sqlite: run `sync.py pull` first")
-    summary, pipeline = build(tables, run, manual=load_manual())
+    summary, pipeline = build(tables, run, manual=load_manual(), spend=load_spend())
     out = data_dir() / "dashboard"
     out.mkdir(parents=True, exist_ok=True)
     for name, doc in (("summary", summary), ("pipeline", pipeline)):

@@ -126,6 +126,11 @@ th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; p
 td { padding: 8px 8px 8px 0; border-top: 1px solid var(--hair); vertical-align: middle; }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 td.name { min-width: 120px; }
+tr.grp td { font-weight: 600; background: var(--chip); }
+tr.grp td:first-child { padding-left: 6px; }
+tr.camp td { color: var(--ink-2); font-size: 12.5px; }
+tr.camp td.name { padding-left: 16px; }
+td.neg { color: var(--bad); }
 .track { position: relative; height: 10px; min-width: 72px; background: transparent; }
 .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 3px 3px 0; }
 .track i.all { background: var(--open); }
@@ -195,8 +200,9 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
 <script>
 (() => {
   const TZ = "America/Chicago";
-  const S = { summary: null, pipeline: null, period: "90", reason: "all", showAll: {} };
+  const S = { summary: null, pipeline: null, period: "90", reason: "all", showAll: {}, chView: null };
   try { S.period = localStorage.getItem("lerega.period") || "90"; } catch (e) {}
+  try { S.chView = localStorage.getItem("lerega.channels"); } catch (e) {}
 
   const nf = new Intl.NumberFormat("en-US");
   const num = (n) => (n == null ? "—" : nf.format(Math.round(n)));
@@ -547,6 +553,57 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
         breakdownCard("Как обратились", "форма, звонок, сообщение", p.came_via, p.leads, p.missing.came_via, "способ обращения")));
   }
 
+  function channelsCard(sm) {
+    const ch = sm.channels;
+    if (!ch) return pendingCard("Каналы: заявки, деньги и расходы", "Появится после выгрузки разметки каналов из CRM.");
+    const views = ch.months.concat(["all"]);
+    const view = views.includes(S.chView) ? S.chView : ch.months[ch.months.length - 1];
+    const label = (k) => k === "all" ? "С " + shortDate(ch.months[0] + "-01") : fmtDate(k + "-15", { month: "long" });
+    const seg = h("div", { class: "seg", role: "group", "aria-label": "Месяц" }, views.map((k) =>
+      h("button", { "aria-pressed": String(k === view), onclick: () => { S.chView = k; try { localStorage.setItem("lerega.channels", k); } catch (e) {} render(); } }, label(k))));
+    const rows = ch.views[view] || [];
+    const sum = (list, key) => list.some((r) => r[key] == null) ? null : list.reduce((a, r) => a + r[key], 0);
+    const cell = (v, fmt, neg) => h("td", { class: "n" + (neg && v != null && v < 0 ? " neg" : "") }, fmt(v));
+    const line = (cls, name, r) => h("tr", { class: cls },
+      h("td", { class: "name" }, name),
+      cell(r.leads, num), cell(r.won, num), cell(r.received, money), cell(r.spend, money),
+      cell(r.contribution, money, true), cell(r.waiting, money),
+      cell(r.spend && r.leads ? r.spend / r.leads : null, money), cell(r.spend && r.won ? r.spend / r.won : null, money),
+      cell(r.costs, money));
+    const body = [];
+    const groups = [...new Set(rows.map((r) => r.group))];
+    for (const g of groups) {
+      const mine = rows.filter((r) => r.group === g && r.campaign == null);
+      if (mine.length > 1) {
+        const tot = {};
+        for (const k of ["spend", "leads", "won", "received", "costs", "contribution", "waiting"]) tot[k] = sum(mine, k);
+        body.push(line("grp", g, tot));
+      }
+      for (const r of rows.filter((x) => x.group === g)) {
+        if (r.campaign != null) { body.push(line("camp", r.campaign, { ...r, waiting: null })); continue; }
+        body.push(line(mine.length > 1 ? "" : "grp", r.channel, r));
+      }
+    }
+    const all = rows.filter((r) => r.campaign == null);
+    const total = {};
+    for (const k of ["leads", "won", "received", "costs", "waiting"]) total[k] = sum(all, k);
+    total.spend = all.reduce((a, r) => a + (r.spend || 0), 0);
+    total.contribution = null;
+    body.push(line("grp", "Итого", total));
+    const unknown = (ch.spend_unknown || []).join(", ");
+    return h("div", { class: "stack" },
+      h("div", { class: "section-title" }, h("h2", {}, "Каналы: заявки, деньги и расходы"), seg),
+      card("Откуда заявки и деньги", "каждая заявка в одном канале; деньги — в месяце оплаты",
+        h("div", { class: "scroll" }, h("table", {},
+          h("thead", {}, h("tr", {}, ["Канал", "Заявки", "Заказы", "Получено", "Расход", "Вклад до оплаты труда", "Ждём оплату", "Заявка стоила", "Заказ стоил", "Затраты"]
+            .map((c, i) => h("th", { class: i ? "n" : null }, c)))),
+          h("tbody", {}, body))),
+        h("p", { class: "note" }, "Заявки и заказы — по месяцу, когда пришла заявка; заказ — взяли в работу или сделали. Получено — оплаты клиентов за месяц без налога и чаевых по заказам канала, даже если заявка пришла раньше. Затраты — материалы, подрядчики, доставка и комиссии, оплаченные в этом месяце. Вклад до оплаты труда = получено − затраты − расход на рекламу; зарплата мастеров и аренда в нём не учтены. Ждём оплату — сейчас: остаток по заказам в работе и сделанные заказы без оплаты."),
+        h("p", { class: "note" }, "Канал определяется по метке рекламы (id кампании, лид-форма), потом по тегу источника в карточке. Заявки до августа 2026 — «Старые заказы»." +
+          (unknown ? ` Расход ${unknown} не записан, поэтому вклад по ним не считается.` : "") +
+          (ch.spend_as_of ? ` Расход на рекламу на ${shortDate(ch.spend_as_of)}; в строке «Итого» — только известный расход.` : ""))));
+  }
+
   function breakdownCard(title, note, rows, total, missing, what) {
     const max = Math.max(...rows.map((r) => r.leads), 1);
     return card(title, note,
@@ -657,6 +714,7 @@ footer { color: var(--muted); font-size: 12.5px; padding-block: 24px 0; }
       h("div", { class: "grid two" }, attention(sm, pl), h("div", { class: "stack" }, upcoming(pl), stagesNow(sm))),
       scorecardCard(sm),
       h("div", { class: "grid two" }, weeklyCard(sm), moneyCard(sm)),
+      channelsCard(sm),
       periodSection(sm),
       h("div", { class: "section-title" }, h("h2", {}, "Работа и переписка")),
       workshopCard(sm),
