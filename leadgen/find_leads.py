@@ -37,7 +37,7 @@ DAILY_DIR = ROOT / "data" / "daily"
 
 LEAD_FIELDS = ["name", "website", "phone", "email", "address", "city", "instagram", "description"]
 COLUMNS = [
-    "date_found", "line", "segment", "name", "fit_score", "city", "address", "phone", "email",
+    "date_found", "line", "segment", "name", "fit_score", "city", "address", "phone", "email", "contact_name",
     "website", "instagram", "description", "partnership_pitch", "source", "source_url", "status",
 ]
 
@@ -186,6 +186,15 @@ def load_master():
         return list(csv.DictReader(f))
 
 
+def save_master(rows):
+    """Rewrite the whole master table (small file), so new columns never misalign."""
+    MASTER.parent.mkdir(parents=True, exist_ok=True)
+    with MASTER.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLUMNS, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(rows)
+
+
 def score(row, segment):
     s = config.SEGMENTS[segment]["weight"] * 6          # up to 60
     city = (row.get("city") or row.get("address") or "").lower()
@@ -245,13 +254,7 @@ def add_leads(found, day, source):
             kept.append(r)
     new_rows = kept
 
-    MASTER.parent.mkdir(parents=True, exist_ok=True)
-    write_header = not MASTER.exists()
-    with MASTER.open("a", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=COLUMNS, extrasaction="ignore")
-        if write_header:
-            w.writeheader()
-        w.writerows(new_rows)
+    save_master(master + new_rows)
 
     DAILY_DIR.mkdir(parents=True, exist_ok=True)
     daily = DAILY_DIR / f"{day.isoformat()}.csv"
@@ -286,6 +289,7 @@ SHEET_HEADERS = {
     "fit_score": "Оценка", "line": "Направление", "segment": "Сегмент", "name": "Компания",
     "city": "Город", "phone": "Телефон", "email": "Email", "website": "Сайт", "address": "Адрес",
     "instagram": "Instagram", "description": "Описание", "partnership_pitch": "Что предложить",
+    "email_subject": "Тема письма", "email_body": "Письмо",
     "status": "Статус", "date_found": "Найдено", "source": "Источник", "source_url": "Ссылка",
 }
 LINE_RU = {"Commercial": "Коммерция", "Furniture": "Мебель", "Handbags": "Сумки"}
@@ -299,8 +303,13 @@ def sheet_csv(day):
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(SHEET_HEADERS.values())
+    import outreach
+    master = {r["name"]: r for r in load_master()}
     for r in rows:
-        r = dict(r, line=LINE_RU.get(r["line"], r["line"]), status="Новый" if r["status"] == "New" else r["status"])
+        r = dict(r, **{k: v for k, v in master.get(r["name"], {}).items() if v})  # latest email/status
+        subject, body = outreach.render(r["segment"], r["name"], r.get("contact_name") or "")
+        r = dict(r, line=LINE_RU.get(r["line"], r["line"]), status="Новый" if r["status"] == "New" else r["status"],
+                 email_subject=subject, email_body=body)
         w.writerow([r.get(k, "") for k in SHEET_HEADERS])
     return buf.getvalue()
 
