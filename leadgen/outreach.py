@@ -31,13 +31,17 @@ SENDER = {
     "site": "lerega.com",
     "address": "3307B Ranch Rd 620 N, Austin, TX 78734",
 }
-INTRO = "Lerega, a furniture, leather and handbag repair shop in Lakeway"
+# Introduce only the side of the business that matters to this partner.
+INTRO = {
+    "Handbags": "Lerega, a handbag and leather repair studio in Lakeway",
+    "Furniture": "Lerega, an upholstery and leather furniture repair shop here in Lakeway",
+    "Commercial": "Lerega, an upholstery and leather repair shop here in Lakeway",
+}
 PROOF = "11+ years and 5,200+ pieces restored"
 
 SIGNATURE = """{name}
-Lerega - furniture, leather & handbag repair
-{address}
-{phone} · {site}"""
+{phone}
+dillon@lerega.com"""
 
 OPT_OUT = 'Not relevant for you? Just reply "no" and I won\'t write again.'
 
@@ -46,138 +50,138 @@ OPT_OUT = 'Not relevant for you? Just reply "no" and I won\'t write again.'
 TEMPLATES = {
     "restaurant_bar": {
         "ru": "Рестораны и бары: кабинки и барные стулья, ремонт без закрытия.",
-        "subject": "Worn seating at {business}? We fix it after hours",
+        "subject": "Booth and seating repair",
         "body": """{greeting}
 
-I'm {me} from {intro}. We repair and reupholster restaurant booths, banquettes and bar stools - overnight or on your closed day, so you don't lose a service.
+I'm {me} with {intro}. We repair and reupholster restaurant booths, banquettes and bar stools, usually overnight or on a day you're closed.
 
-If any seating at {business} is torn or worn out, reply with a couple of photos and I'll send you a price the same day. Would that help?""",
+If any of your seating is torn or worn, send me a couple of photos and I'll get back to you with a price the same day.""",
     },
     "hotel_venue": {
         "ru": "Отели и площадки: лобби, банкетные стулья, кожа; работаем партиями.",
-        "subject": "Chair and lobby furniture repair for {business}",
+        "subject": "Furniture reupholstery",
         "body": """{greeting}
 
-I'm {me} from {intro}. We reupholster lobby furniture, banquet and guest-room chairs, and restore leather pieces. We work in batches, so rooms and event spaces stay open.
+I'm {me} with {intro}. We reupholster lobby furniture, banquet and guest-room chairs, and restore leather pieces. We can work in small batches so rooms and event spaces stay open.
 
-Could I stop by {business} for 15 minutes and look at the pieces that need work? The estimate is free.""",
+If you have pieces that need work, I'd be glad to stop by and take a look. The estimate is free.""",
     },
     "office_coworking": {
         "ru": "Офисы и коворкинги: ремонт кресел дешевле замены.",
-        "subject": "Fix the office chairs instead of replacing them",
+        "subject": "Office chair repair",
         "body": """{greeting}
 
-I'm {me} from {intro}. We repair and re-cover office chairs and lounge furniture - usually for much less than buying new. Free pickup and delivery for qualifying projects.
+I'm {me} with {intro}. We repair and re-cover office chairs and lounge furniture, which usually costs much less than buying new. We can pick up and bring everything back.
 
-Reply with photos of the worst pieces at {business} and I'll send prices. Worth a look?""",
+If you send me photos of the pieces that need work, I'll get you prices.""",
     },
     "property_manager": {
         "ru": "Управляющие недвижимостью и Airbnb: быстрый ремонт между гостями.",
-        "subject": "Fast furniture repair between guests",
+        "subject": "Furniture repair for your units",
         "body": """{greeting}
 
-I'm {me} from {intro}. When a sofa or chair in one of your units gets damaged, we pick it up, repair it and bring it back - often faster than ordering new. Better pricing for multiple properties.
+I'm {me} with {intro}. When a sofa or chair in one of your units gets damaged, we pick it up, repair it and bring it back, often faster than ordering a new one. We also do better pricing for multiple properties.
 
-Who at {business} should I send our details to?""",
+Who on your team would be the right person to talk to about this?""",
     },
     "medical_salon": {
         "ru": "Салоны, барбершопы, клиники: перетяжка кресел с минимальным простоем.",
-        "subject": "Reupholstering the chairs at {business}",
+        "subject": "Chair reupholstery",
         "body": """{greeting}
 
-I'm {me} from {intro}. Cracked vinyl or leather on styling, barber or treatment chairs can be repaired or re-covered - no need to buy new, and the chair is out for as little time as possible.
+I'm {me} with {intro}. We repair and re-cover cracked vinyl and leather on styling, barber and treatment chairs, so you don't have to replace them, and the chair is out for as short a time as possible.
 
-Send me a photo of one chair and I'll tell you what it would cost.""",
+If you send me a photo of one of the chairs, I'll tell you what it would cost.""",
     },
     "vehicle_marine": {
         "ru": "Авто, RV, лодки, прокат: ремонт салона, чтобы продавать дороже.",
-        "subject": "Seat and leather repair for your inventory",
+        "subject": "Seat and interior leather repair",
         "body": """{greeting}
 
-I'm {me} from {intro}. We repair torn, cracked and faded seats and interior leather in cars, RVs and boats - it helps used units sell faster and for more. Dealer and fleet pricing available.
+I'm {me} with {intro}. We repair torn, cracked and faded seats and interior leather in cars, RVs and boats, which helps used units sell faster. We have dealer and fleet pricing.
 
-Open to a quick call this week?""",
+Would you be open to a quick call this week?""",
     },
     "interior_designer": {
         "ru": "Дизайнеры интерьера: мы — их мастерская; цена для дизайнеров и реферальное вознаграждение.",
-        "subject": "Upholstery partner for your projects",
+        "subject": "Upholstery for your projects",
         "body": """{greeting}
 
-I'm {me} from {intro}. When your clients have pieces they want to keep but refresh, we can be the workroom you send them to: reupholstery, leather repair and restoration. We offer designers trade pricing and a referral fee.
+I'm {me} with {intro}. A lot of clients have pieces they want to keep but refresh, and we'd be happy to be the workroom you send them to: reupholstery, leather repair and restoration. We offer designers trade pricing and a referral fee.
 
-Could I send you a few before-and-after photos of our work?""",
+Would it help if I sent you a few before-and-after photos of our work?""",
     },
     "furniture_store": {
         "ru": "Мебельные магазины: повреждения при доставке и гарантия — ремонт дешевле замены.",
-        "subject": "Repair service for delivery damage and warranty claims",
+        "subject": "Furniture repair for delivery damage and warranty claims",
         "body": """{greeting}
 
-I'm {me} from {intro}. When a piece gets damaged in delivery or a customer files a warranty claim, we can repair it - usually cheaper than replacing it. We also touch up floor models.
+I'm {me} with {intro}. When a piece gets damaged in delivery or a customer files a warranty claim, we can usually repair it for less than replacing it. We also touch up floor models.
 
-Who handles service and warranty at {business}? I'd like to send our details.""",
+Who handles service and warranty on your side? I'd like to send them our details.""",
     },
     "antique_consignment": {
         "ru": "Антиквариат и комиссионки: реставрация перед продажей; скидка их покупателям.",
-        "subject": "Restoration before resale",
+        "subject": "Furniture restoration before resale",
         "body": """{greeting}
 
-I'm {me} from {intro}. Re-covering a dated chair or restoring worn leather often lets a piece sell faster and for more. And when a buyer loves a piece but not its fabric, we can help them too.
+I'm {me} with {intro}. Re-covering a dated chair or restoring worn leather often helps a piece sell faster and for more. And when a buyer loves a piece but not the fabric, we can help them with that too.
 
-Could I leave a few cards at {business}, with a discount for your buyers?""",
+Would you mind if I left a few cards at your store, with a discount for your buyers?""",
     },
     "moving_company": {
         "ru": "Переезды: ремонт повреждённой мебели дешевле выплаты по претензии.",
-        "subject": "Furniture damaged in a move? We repair it",
+        "subject": "Repair for furniture damaged in moves",
         "body": """{greeting}
 
-I'm {me} from {intro}. When a customer's sofa or chair gets torn or scuffed in a move, repairing it is usually cheaper than paying out the claim. Quick turnaround, pickup available.
+I'm {me} with {intro}. When a customer's sofa or chair gets torn or scuffed in a move, repairing it is usually cheaper than paying out the claim. We turn things around quickly and can pick up.
 
-Can I send our contact to whoever handles claims at {business}?""",
+Could I send our contact to whoever handles claims?""",
     },
     "builder_remodeler": {
         "ru": "Строители и ремонт: подушки, банкетки, встроенные диваны на заказ.",
-        "subject": "Custom cushions and banquettes for your projects",
+        "subject": "Custom cushions and banquettes",
         "body": """{greeting}
 
-I'm {me} from {intro}. We make custom seat cushions, banquettes, window seats and headboards, and re-cover built-in seating - a finished look for kitchens, patios and media rooms.
+I'm {me} with {intro}. We make custom seat cushions, banquettes, window seats and headboards, and re-cover built-in seating.
 
-Do you have a project coming up where this could fit?""",
+If you have a project coming up where this could fit, I'd be glad to help.""",
     },
     "luxury_resale": {
         "ru": "Перепродажа люксовых сумок: восстановление перед продажей, цена за сумку.",
-        "subject": "Handbag restoration before resale",
+        "subject": "Handbag restoration",
         "body": """{greeting}
 
-I'm {me} from {intro}. Our handbag workshop restores Louis Vuitton, Chanel, Gucci and other designer bags: edges, handles, corners, lining and color. A restored bag sells faster and for more. Per-bag pricing for resellers.
+I'm {me} with {intro}. We restore designer bags (Louis Vuitton, Chanel, Gucci and others): edges, handles, corners, lining and color.
 
-Have a few bags at {business} you're holding back from the floor? I'll quote them for free.""",
+If you have bags that need some work before they go on the floor, send me photos and I'll quote them for free. We also have per-bag pricing for resellers.""",
     },
     "shoe_repair_tailor": {
         "ru": "Ремонт обуви и ателье: обмен клиентами (им — обувь, нам — сумки).",
-        "subject": "Handbag jobs you don't take - let's swap referrals",
+        "subject": "Handbag repair referrals",
         "body": """{greeting}
 
-I'm {me} from {intro}. We specialize in handbags and leather goods. If customers bring you bags you'd rather not take, send them our way - and we'll send you the shoe and garment work we don't do.
+I'm {me} with {intro}. If customers ever bring you bags you'd rather not take on, feel free to send them our way, and we'll send you the shoe and garment work we don't do.
 
-Interested in swapping referrals?""",
+Would that work for you?""",
     },
     "dry_cleaner": {
         "ru": "Химчистки: точка приёма сумок, комиссия с каждого заказа.",
-        "subject": "Handbag repair and cleaning for your customers",
+        "subject": "Handbag repair and cleaning",
         "body": """{greeting}
 
-I'm {me} from {intro}. Your customers could drop off handbags and leather items at your counter; we pick them up, repair or clean them and bring them back. You earn a commission on every order, with no extra work.
+I'm {me} with {intro}. Your customers could drop off handbags and leather items at your counter, and we'd pick them up, repair or clean them and bring them back. You'd earn a commission on every order.
 
-Could I come by {business} and explain it in 10 minutes?""",
+Could I stop by sometime and walk you through it? It takes about ten minutes.""",
     },
     "boutique_bridal": {
         "ru": "Бутики и свадебные салоны: скидочная карта для их клиентов.",
-        "subject": "Bag care for your customers",
+        "subject": "Handbag care for your customers",
         "body": """{greeting}
 
-I'm {me} from {intro}. We repair and restore handbags and leather accessories. We'd love to give {business} customers a discount card - a nice extra for them, and no work for you.
+I'm {me} with {intro}. We repair and restore handbags and leather accessories, and we'd like to offer your customers a discount card. It's a nice extra for them and no work for you.
 
-Can I drop off a few cards?""",
+Would it be okay if I dropped off a few cards?""",
     },
 }
 
@@ -185,7 +189,7 @@ FOLLOW_UP = {
     "subject": "Re: {subject}",
     "body": """{greeting}
 
-Just bringing this back up. If it's easier, reply with a photo and I'll send a price - no commitment.""",
+Just following up on my note below. If it's easier, reply with a photo and I'll send a price, no commitment.""",
 }
 
 
@@ -203,16 +207,19 @@ def render(segment, business, contact_name=""):
     business = clean_business(business)
     team = business[4:] if business.startswith("The ") else business
     greeting = f"Hi {contact_name}," if contact_name else f"Hi {team} team,"
-    fill = dict(business=business, greeting=greeting, me=SENDER["name"], intro=INTRO, proof=PROOF)
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import config
+    intro = INTRO[config.SEGMENTS[segment]["line"]]
+    fill = dict(business=business, greeting=greeting, me=SENDER["name"], intro=intro, proof=PROOF)
     subject = t["subject"].format(**fill)
     body = t["body"].format(**fill)
-    body += "\n\n" + SIGNATURE.format(**SENDER) + "\n\n" + OPT_OUT
+    body += "\n\n" + SIGNATURE.format(**SENDER)
     return subject, body
 
 
 # ---------------------------------------------------------------- HTML (how the email is actually sent)
 # Same look as Dillon's regular emails in Zoho: Verdana 10pt, Zoho signature "Main" (logo, name, phone, email),
-# then one small grey footer: services, proof, address (required by CAN-SPAM) and the opt-out line.
+# The owner asked for no extra footer below the signature.
 FONT = "font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 10pt"
 ORANGE = "rgb(245, 130, 32)"
 FOOTER = (
@@ -232,7 +239,7 @@ def render_html(segment, business, contact_name=""):
     message = text.split("\n\n" + SIGNATURE.split("\n")[0].format(**SENDER) + "\n")[0]  # body without text signature
     paras = "".join(f"<div>{html.escape(p, quote=False).replace(chr(10), '<br>')}<br></div><div><br></div>" for p in message.split("\n\n"))
     signature = (Path(__file__).with_name("signature.html")).read_text(encoding="utf-8").strip()
-    body = f'<div><div style="{FONT}">{paras}{signature}<div><br></div>{FOOTER}</div></div>'
+    body = f'<div><div style="{FONT}">{paras}{signature}</div></div>'
     return subject, body
 
 

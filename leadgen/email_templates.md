@@ -1,19 +1,13 @@
 # Шаблоны первого письма партнёрам
 
-Сгенерировано из `leadgen/outreach.py` — править тексты там, этот файл пересобирается.
+Сгенерировано из `leadgen/outreach.py` — править тексты там.
 
-**Оформление.** Письма уходят в HTML, как обычные письма Dillon в Zoho: шрифт Verdana 10 pt,
-подпись Zoho «Main» (логотип Lerega.com со ссылкой, Dillon, (737) 247-7484, dillon@lerega.com) и под ней
-короткий серый подвал: направления (оранжевым), 11+ лет и 5 200+ вещей, адрес мастерской, строка для отписки.
-Код оформления — `render_html()` в `leadgen/outreach.py` и `leadgen/signature.html`. Ниже — только текст писем.
+**Правила.** Тема простая, без названия компании и без рекламного тона. Название компании — один раз, в приветствии.
+Письма про сумки — только про сумки, про мебель — только про мебель. Текст спокойный, как обычное письмо от Dillon.
 
-**Важно.** Эти компании нам не писали: их нашли поиском по картам (категория + район).
-Поэтому письма начинаются не с «мы увидели ваш запрос», а с того, кто мы и чем полезны, и заканчиваются одним простым вопросом.
+**Оформление.** HTML как обычные письма Dillon в Zoho: Verdana 10 pt и подпись Zoho «Main» (логотип, Dillon, телефон, почта). Без дополнительных блоков под подписью.
 
-- Отправитель: `Dillon at Lerega<dillon@lerega.com>`. Приветствие — по имени, если оно есть на сайте, иначе `Hi <Компания> team,`.
-- В конце каждого письма — подпись с адресом мастерской и строка «ответьте no — больше не напишу» (для холодных писем в США это обязательно, закон CAN-SPAM).
-- Факты в письмах взяты с lerega.com: 11+ лет, 5 200+ восстановленных вещей, бесплатный забор и доставка для подходящих заказов.
-- Конкретные проценты и скидки в письмах не названы — обсуждаются, когда партнёр ответит.
+**Важно.** Эти компании нам не писали: их нашли поиском по картам. Поэтому не пишем «мы увидели ваш запрос».
 
 ---
 
@@ -22,115 +16,97 @@
 ### 1. Рестораны и бары: кабинки и барные стулья, ремонт без закрытия. `restaurant_bar`
 
 ```
-Subject: Worn seating at {Business}? We fix it after hours
+Subject: Booth and seating repair
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. We repair and reupholster restaurant booths, banquettes and bar stools - overnight or on your closed day, so you don't lose a service.
+I'm Dillon with Lerega, an upholstery and leather repair shop here in Lakeway. We repair and reupholster restaurant booths, banquettes and bar stools, usually overnight or on a day you're closed.
 
-If any seating at {Business} is torn or worn out, reply with a couple of photos and I'll send you a price the same day. Would that help?
+If any of your seating is torn or worn, send me a couple of photos and I'll get back to you with a price the same day.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 2. Отели и площадки: лобби, банкетные стулья, кожа; работаем партиями. `hotel_venue`
 
 ```
-Subject: Chair and lobby furniture repair for {Business}
+Subject: Furniture reupholstery
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway (11+ years and 5,200+ pieces restored). We reupholster lobby furniture, banquet and guest-room chairs, and restore leather pieces. We work in batches, so rooms and event spaces stay open.
+I'm Dillon with Lerega, an upholstery and leather repair shop here in Lakeway. We reupholster lobby furniture, banquet and guest-room chairs, and restore leather pieces. We can work in small batches so rooms and event spaces stay open.
 
-Could I stop by {Business} for 15 minutes and look at the pieces that need work? The estimate is free.
+If you have pieces that need work, I'd be glad to stop by and take a look. The estimate is free.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 3. Офисы и коворкинги: ремонт кресел дешевле замены. `office_coworking`
 
 ```
-Subject: Fix the office chairs instead of replacing them
+Subject: Office chair repair
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. We repair and re-cover office chairs and lounge furniture - usually for much less than buying new. Free pickup and delivery for qualifying projects.
+I'm Dillon with Lerega, an upholstery and leather repair shop here in Lakeway. We repair and re-cover office chairs and lounge furniture, which usually costs much less than buying new. We can pick up and bring everything back.
 
-Reply with photos of the worst pieces at {Business} and I'll send prices. Worth a look?
+If you send me photos of the pieces that need work, I'll get you prices.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 4. Управляющие недвижимостью и Airbnb: быстрый ремонт между гостями. `property_manager`
 
 ```
-Subject: Fast furniture repair between guests
+Subject: Furniture repair for your units
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. When a sofa or chair in one of your units gets damaged, we pick it up, repair it and bring it back - often faster than ordering new. Better pricing for multiple properties.
+I'm Dillon with Lerega, an upholstery and leather repair shop here in Lakeway. When a sofa or chair in one of your units gets damaged, we pick it up, repair it and bring it back, often faster than ordering a new one. We also do better pricing for multiple properties.
 
-Who at {Business} should I send our details to?
+Who on your team would be the right person to talk to about this?
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 5. Салоны, барбершопы, клиники: перетяжка кресел с минимальным простоем. `medical_salon`
 
 ```
-Subject: Reupholstering the chairs at {Business}
+Subject: Chair reupholstery
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. Cracked vinyl or leather on styling, barber or treatment chairs can be repaired or re-covered - no need to buy new, and the chair is out for as little time as possible.
+I'm Dillon with Lerega, an upholstery and leather repair shop here in Lakeway. We repair and re-cover cracked vinyl and leather on styling, barber and treatment chairs, so you don't have to replace them, and the chair is out for as short a time as possible.
 
-Send me a photo of one chair and I'll tell you what it would cost.
+If you send me a photo of one of the chairs, I'll tell you what it would cost.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 6. Авто, RV, лодки, прокат: ремонт салона, чтобы продавать дороже. `vehicle_marine`
 
 ```
-Subject: Seat and leather repair for your inventory
+Subject: Seat and interior leather repair
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway (11+ years and 5,200+ pieces restored). We repair torn, cracked and faded seats and interior leather in cars, RVs and boats - it helps used units sell faster and for more. Dealer and fleet pricing available.
+I'm Dillon with Lerega, an upholstery and leather repair shop here in Lakeway. We repair torn, cracked and faded seats and interior leather in cars, RVs and boats, which helps used units sell faster. We have dealer and fleet pricing.
 
-Open to a quick call this week?
+Would you be open to a quick call this week?
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ---
@@ -140,96 +116,81 @@ Not relevant for you? Just reply "no" and I won't write again.
 ### 7. Дизайнеры интерьера: мы — их мастерская; цена для дизайнеров и реферальное вознаграждение. `interior_designer`
 
 ```
-Subject: Upholstery partner for your projects
+Subject: Upholstery for your projects
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway (11+ years and 5,200+ pieces restored). When your clients have pieces they want to keep but refresh, we can be the workroom you send them to: reupholstery, leather repair and restoration. We offer designers trade pricing and a referral fee.
+I'm Dillon with Lerega, an upholstery and leather furniture repair shop here in Lakeway. A lot of clients have pieces they want to keep but refresh, and we'd be happy to be the workroom you send them to: reupholstery, leather repair and restoration. We offer designers trade pricing and a referral fee.
 
-Could I send you a few before-and-after photos of our work?
+Would it help if I sent you a few before-and-after photos of our work?
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 8. Мебельные магазины: повреждения при доставке и гарантия — ремонт дешевле замены. `furniture_store`
 
 ```
-Subject: Repair service for delivery damage and warranty claims
+Subject: Furniture repair for delivery damage and warranty claims
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. When a piece gets damaged in delivery or a customer files a warranty claim, we can repair it - usually cheaper than replacing it. We also touch up floor models.
+I'm Dillon with Lerega, an upholstery and leather furniture repair shop here in Lakeway. When a piece gets damaged in delivery or a customer files a warranty claim, we can usually repair it for less than replacing it. We also touch up floor models.
 
-Who handles service and warranty at {Business}? I'd like to send our details.
+Who handles service and warranty on your side? I'd like to send them our details.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 9. Антиквариат и комиссионки: реставрация перед продажей; скидка их покупателям. `antique_consignment`
 
 ```
-Subject: Restoration before resale
+Subject: Furniture restoration before resale
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. Re-covering a dated chair or restoring worn leather often lets a piece sell faster and for more. And when a buyer loves a piece but not its fabric, we can help them too.
+I'm Dillon with Lerega, an upholstery and leather furniture repair shop here in Lakeway. Re-covering a dated chair or restoring worn leather often helps a piece sell faster and for more. And when a buyer loves a piece but not the fabric, we can help them with that too.
 
-Could I leave a few cards at {Business}, with a discount for your buyers?
+Would you mind if I left a few cards at your store, with a discount for your buyers?
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 10. Переезды: ремонт повреждённой мебели дешевле выплаты по претензии. `moving_company`
 
 ```
-Subject: Furniture damaged in a move? We repair it
+Subject: Repair for furniture damaged in moves
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. When a customer's sofa or chair gets torn or scuffed in a move, repairing it is usually cheaper than paying out the claim. Quick turnaround, pickup available.
+I'm Dillon with Lerega, an upholstery and leather furniture repair shop here in Lakeway. When a customer's sofa or chair gets torn or scuffed in a move, repairing it is usually cheaper than paying out the claim. We turn things around quickly and can pick up.
 
-Can I send our contact to whoever handles claims at {Business}?
+Could I send our contact to whoever handles claims?
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 11. Строители и ремонт: подушки, банкетки, встроенные диваны на заказ. `builder_remodeler`
 
 ```
-Subject: Custom cushions and banquettes for your projects
+Subject: Custom cushions and banquettes
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. We make custom seat cushions, banquettes, window seats and headboards, and re-cover built-in seating - a finished look for kitchens, patios and media rooms.
+I'm Dillon with Lerega, an upholstery and leather furniture repair shop here in Lakeway. We make custom seat cushions, banquettes, window seats and headboards, and re-cover built-in seating.
 
-Do you have a project coming up where this could fit?
+If you have a project coming up where this could fit, I'd be glad to help.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ---
@@ -239,77 +200,65 @@ Not relevant for you? Just reply "no" and I won't write again.
 ### 12. Перепродажа люксовых сумок: восстановление перед продажей, цена за сумку. `luxury_resale`
 
 ```
-Subject: Handbag restoration before resale
+Subject: Handbag restoration
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. Our handbag workshop restores Louis Vuitton, Chanel, Gucci and other designer bags: edges, handles, corners, lining and color. A restored bag sells faster and for more. Per-bag pricing for resellers.
+I'm Dillon with Lerega, a handbag and leather repair studio in Lakeway. We restore designer bags (Louis Vuitton, Chanel, Gucci and others): edges, handles, corners, lining and color.
 
-Have a few bags at {Business} you're holding back from the floor? I'll quote them for free.
+If you have bags that need some work before they go on the floor, send me photos and I'll quote them for free. We also have per-bag pricing for resellers.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 13. Ремонт обуви и ателье: обмен клиентами (им — обувь, нам — сумки). `shoe_repair_tailor`
 
 ```
-Subject: Handbag jobs you don't take - let's swap referrals
+Subject: Handbag repair referrals
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. We specialize in handbags and leather goods. If customers bring you bags you'd rather not take, send them our way - and we'll send you the shoe and garment work we don't do.
+I'm Dillon with Lerega, a handbag and leather repair studio in Lakeway. If customers ever bring you bags you'd rather not take on, feel free to send them our way, and we'll send you the shoe and garment work we don't do.
 
-Interested in swapping referrals?
+Would that work for you?
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 14. Химчистки: точка приёма сумок, комиссия с каждого заказа. `dry_cleaner`
 
 ```
-Subject: Handbag repair and cleaning for your customers
+Subject: Handbag repair and cleaning
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. Your customers could drop off handbags and leather items at your counter; we pick them up, repair or clean them and bring them back. You earn a commission on every order, with no extra work.
+I'm Dillon with Lerega, a handbag and leather repair studio in Lakeway. Your customers could drop off handbags and leather items at your counter, and we'd pick them up, repair or clean them and bring them back. You'd earn a commission on every order.
 
-Could I come by {Business} and explain it in 10 minutes?
+Could I stop by sometime and walk you through it? It takes about ten minutes.
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ### 15. Бутики и свадебные салоны: скидочная карта для их клиентов. `boutique_bridal`
 
 ```
-Subject: Bag care for your customers
+Subject: Handbag care for your customers
 
 Hi {Business} team,
 
-I'm Dillon from Lerega, a furniture, leather and handbag repair shop in Lakeway. We repair and restore handbags and leather accessories. We'd love to give {Business} customers a discount card - a nice extra for them, and no work for you.
+I'm Dillon with Lerega, a handbag and leather repair studio in Lakeway. We repair and restore handbags and leather accessories, and we'd like to offer your customers a discount card. It's a nice extra for them and no work for you.
 
-Can I drop off a few cards?
+Would it be okay if I dropped off a few cards?
 
 Dillon
-Lerega - furniture, leather & handbag repair
-3307B Ranch Rd 620 N, Austin, TX 78734
-(737) 247-7484 · lerega.com
-
-Not relevant for you? Just reply "no" and I won't write again.
+(737) 247-7484
+dillon@lerega.com
 ```
 
 ---
@@ -321,7 +270,7 @@ Subject: Re: <тема первого письма>
 
 Hi {Business} team,
 
-Just bringing this back up. If it's easier, reply with a photo and I'll send a price - no commitment.
+Just following up on my note below. If it's easier, reply with a photo and I'll send a price, no commitment.
 
 Dillon
 ```
