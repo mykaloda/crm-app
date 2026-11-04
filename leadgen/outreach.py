@@ -258,6 +258,10 @@ def build_drafts(day):
                            "html": html_body})
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     path = OUT_DIR / f"drafts-{day.isoformat()}.json"
+    if path.exists():  # keep drafts already prepared today (with their Zoho ids), add only new ones
+        old = json.loads(path.read_text(encoding="utf-8"))
+        known = {x["to"].lower() for x in old}
+        drafts = old + [x for x in drafts if x["to"].lower() not in known]
     path.write_text(json.dumps(drafts, indent=2, ensure_ascii=False), encoding="utf-8")
     return path, drafts
 
