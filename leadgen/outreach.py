@@ -102,6 +102,33 @@ I'm {me} with {intro}. We repair torn, cracked and faded seats and interior leat
 
 Would you be open to a quick call this week?""",
     },
+    "facility_subcontract": {
+        "ru": "Сети коммерческого ремонта мебели: предложение быть местным субподрядчиком.",
+        "subject": "Upholstery subcontractor in Austin",
+        "body": """{greeting}
+
+I'm {me} with Lerega, an upholstery and leather repair shop in Lakeway, just outside Austin. We reupholster restaurant booths, banquettes and dining chairs, repair leather and vinyl, and make replacement seats and backs, both on site and in our shop.
+
+If you have restaurant or hospitality projects in Austin or Central Texas, we'd be glad to take them on as a local subcontractor. Who would be the right person to talk to about that?""",
+    },
+    "industry_association": {
+        "ru": "Отраслевые ассоциации: вопрос о членстве поставщика и встречах в Техасе.",
+        "subject": "Vendor membership question",
+        "body": """{greeting}
+
+I'm {me} with Lerega, an upholstery and leather repair shop in Lakeway, Texas. We reupholster restaurant booths, banquettes and chairs, and we're thinking about joining RFMA as a Vendor Allied member.
+
+Before we sign up, could you tell me which events are coming up in Texas, especially around Austin, and how vendors usually meet the facilities managers who look after Texas locations? Also, if we join now, does the membership run through December 31 of this year or next?""",
+    },
+    "buyer_event": {
+        "ru": "Встречи с закупщиками сетей: запрос цены и состава покупателей.",
+        "subject": "RestaurantPoint supplier package",
+        "body": """{greeting}
+
+I'm {me} with Lerega, an upholstery shop in Lakeway, Texas. We reupholster restaurant seating and build custom booths and banquettes.
+
+I'm interested in RestaurantPoint. Could you send me pricing for a supplier package, and let me know whether the buyers who attend include people responsible for seating or FF&E, ideally with locations in Texas?""",
+    },
     "interior_designer": {
         "ru": "Дизайнеры интерьера: мы — их мастерская; цена для дизайнеров и реферальное вознаграждение.",
         "subject": "Upholstery for your projects",

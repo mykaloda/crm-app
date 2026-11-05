@@ -69,6 +69,28 @@ SEGMENTS = {
         "query": "car dealerships, RV dealers, boat dealers, marinas and limo / van rental companies",
         "pitch": "Ремонт кожи сидений и салона для б/у машин, лодок, RV и автопарков (Archer Van Rentals уже клиент).",
     },
+    # --- Commercial channels: networks and buyer events (from owner's research, Nov 2026) ---
+    "facility_subcontract": {
+        "line": "Commercial",
+        "weight": 10,
+        "maps": "commercial furniture repair company",
+        "query": "national commercial furniture repair companies that subcontract local upholstery shops",
+        "pitch": "Местная мастерская-субподрядчик для их ресторанных и гостиничных проектов в Austin / Central Texas.",
+    },
+    "industry_association": {
+        "line": "Commercial",
+        "weight": 8,
+        "maps": "restaurant facility management association",
+        "query": "restaurant facility management associations with vendor membership",
+        "pitch": "Членство поставщика ($850/год), встречи с facility-менеджерами ресторанных сетей в Техасе.",
+    },
+    "buyer_event": {
+        "line": "Commercial",
+        "weight": 7,
+        "maps": "restaurant supplier buyer event",
+        "query": "hosted buyer events connecting restaurant chains with furniture and FF&E suppliers",
+        "pitch": "Платные встречи с закупщиками сетей (design / construction / FF&E); сначала узнать цену и аудиторию.",
+    },
     # --- Furniture repair: referral partners ---
     "interior_designer": {
         "line": "Furniture",
