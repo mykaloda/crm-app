@@ -34,8 +34,8 @@ SENDER = {
 # Introduce only the side of the business that matters to this partner.
 INTRO = {
     "Handbags": "Lerega, a handbag and leather repair studio in Lakeway",
-    "Furniture": "Lerega, an upholstery and leather furniture repair shop here in Lakeway",
-    "Commercial": "Lerega, an upholstery and leather repair shop here in Lakeway",
+    "Furniture": "Lerega, an upholstery and leather furniture repair shop in Lakeway",
+    "Commercial": "Lerega, an upholstery and leather repair shop in Lakeway",
 }
 PROOF = "11+ years and 5,200+ pieces restored"
 
@@ -140,7 +140,7 @@ Would it help if I sent you a few before-and-after photos of our work?""",
     },
     "furniture_store": {
         "ru": "Мебельные магазины: повреждения при доставке и гарантия — ремонт дешевле замены.",
-        "subject": "Furniture repair for delivery damage and warranty claims",
+        "subject": "Warranty and delivery damage repair",
         "body": """{greeting}
 
 I'm {me} with {intro}. When a piece gets damaged in delivery or a customer files a warranty claim, we can usually repair it for less than replacing it. We also touch up floor models.

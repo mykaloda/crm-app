@@ -2,6 +2,14 @@
 
 Эту инструкцию выполняет запланированная сессия Claude каждое утро. Владелец бизнеса читает итог на русском.
 
+## Правила отбора (коротко)
+
+- Не брать: крупные сети с ремонтом через головной офис (IKEA, Rooms To Go, Ashley, Living Spaces, World Market, At Home, Lovesac),
+  конкурентов (категории upholstery / leather repair / furniture repair), уже известных (`data/leads.csv`, CRM).
+- Бюджет Firecrawl маленький (дневной лимит кончается за ~100 кредитов): поиск по картам = 10 кредитов за запрос;
+  почту искать через `firecrawl_scrape` с `formats: ["links"]` (дешевле всего, `mailto:` видно в ссылках),
+  страницу Contact — только если на главной почты нет.
+
 ## 0. Подготовка
 
 ```bash
@@ -52,6 +60,14 @@ python3 leadgen/find_leads.py search
    `zoho_mail_create_draft`, connection `023dfe63-f6a5-84f4-b080-f3cebd8b4a6b`, `accountId` `643277000000008002`,
    `fromAddress` из черновика, `mailFormat: html`, `content` = поле `html` черновика (Verdana 10pt + подпись Zoho «Main»). Статус лида — `Draft in Zoho`, id черновика — в drafts-$DAY.json.
    Отправляет владелец сам из папки «Черновики» Zoho (dillon@lerega.com).
+
+## 3b. Ответы на отправленные письма
+
+Zoho (craft@lerega.com, connection `023dfe63-f6a5-84f4-b080-f3cebd8b4a6b`): поиск во входящих по отправителям из `data/outreach.csv`
+(`/messages/search`, `searchKey` = `sender:домен::or:sender:домен`, не больше ~7 доменов за запрос — длинный ключ Zoho отклоняет).
+Для каждого ответа: что просят, есть ли заказ в CRM (`orders.client_name`, `messages`), отправлена ли цена.
+Если с ответа или цены прошло больше 3 дней и тишина — черновик короткого повторного письма в Zoho.
+Автоответы («out of office») — просто отметить.
 
 ## 4. Google-таблица
 
