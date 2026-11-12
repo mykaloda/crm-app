@@ -173,8 +173,15 @@ SITES_PER_QUERY = 5          # 4 x 50 = 200 credits per day
 MAX_PER_SEGMENT = 6         # max new leads per segment per day
 MAX_PER_LINE = 12           # max new leads per line (Commercial / Furniture / Handbags) per day
 
+# Skip big chains: repairs go through their head office, a local email does not reach anyone who decides.
+CHAIN_NAMES = [
+    "ikea", "rooms to go", "ashley", "living spaces", "world market", "at home", "lovesac", "la-z-boy",
+    "havertys", "goodwill", "kid to kid", "skinspirit", "skin pharm", "la quinta", "marriott", "hilton",
+    "uptown cheapskate", "style encore", "2nd street",
+]
+
 # Skip direct competitors: map categories that mean "they already do what we do".
-COMPETITOR_CATEGORIES = ["leather repair", "upholstery", "furniture repair", "handbag repair", "furniture refinishing"]
+COMPETITOR_CATEGORIES = ["leather repair", "upholstery", "furniture repair", "handbag repair", "furniture refinishing", "furniture restoration"]
 
 CORE_CITIES = [
     "austin", "lakeway", "bee cave", "west lake hills", "rollingwood", "round rock",

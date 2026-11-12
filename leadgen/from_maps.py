@@ -38,7 +38,8 @@ def convert(groups):
     for g in groups:
         seg = g["segment"]
         for p in g.get("results") or []:
-            if is_competitor(p) or (p.get("rating") or 5) < 3.5:
+            name_l = (p.get("name") or "").lower()
+            if is_competitor(p) or (p.get("rating") or 5) < 3.5 or any(c in name_l for c in config.CHAIN_NAMES):
                 continue
             cats = ", ".join((p.get("categories") or [])[:3])
             rating = f"{p['rating']}★ ({p.get('review_count') or 0} reviews)" if p.get("rating") else ""
