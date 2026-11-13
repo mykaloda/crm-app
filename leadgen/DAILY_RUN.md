@@ -76,7 +76,8 @@ python3 leadgen/find_leads.py sheet > sheet.csv
 ```
 
 Google Drive `create_file`: title `Лиды $DAY`, `parentId` = `1SZtvrai0LVhUK8bk8zjtpmnyDUbqvw0I`
-(папка «Lerega — B2B лиды»), `contentMimeType` = `text/csv`, `textContent` = содержимое sheet.csv.
+(папка «Lerega — B2B лиды»), `contentMimeType` = `text/csv`, содержимое — ссылкой на файл, а не текстом:
+`base64Content` = `sha256:<sha256sum файла>:<абсолютный путь к sheet.csv>` (Google Drive сам подставит файл).
 Получится Google Sheet. Если новых лидов 0 — таблицу не создавать.
 
 ## 5. Сохранить

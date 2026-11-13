@@ -14,6 +14,7 @@ import argparse
 import csv
 import datetime as dt
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -222,10 +223,9 @@ Just following up on my note below. If it's easier, reply with a photo and I'll 
 
 # ---------------------------------------------------------------- build
 def clean_business(name):
-    # "Uptown Cheapskate Round Rock" stays; drop " - Lakeway" style suffixes and "LLC".
+    # "Uptown Cheapskate Round Rock" stays; drop " - Lakeway" style suffixes and "LLC" / "Inc".
     name = name.split(" - ")[0]
-    for suffix in (" LLC", ", LLC", " Inc"):
-        name = name.replace(suffix, "")
+    name = re.sub(r",?\s+(LLC|Inc\.?)$", "", name.strip())
     return name.strip()
 
 
