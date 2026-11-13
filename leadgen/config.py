@@ -177,7 +177,8 @@ MAX_PER_LINE = 12           # max new leads per line (Commercial / Furniture / H
 CHAIN_NAMES = [
     "ikea", "rooms to go", "ashley", "living spaces", "world market", "at home", "lovesac", "la-z-boy",
     "havertys", "goodwill", "kid to kid", "skinspirit", "skin pharm", "la quinta", "marriott", "hilton",
-    "uptown cheapskate", "style encore", "2nd street",
+    "uptown cheapskate", "style encore", "2nd street", "blue compass", "two men and a truck", "all my sons",
+    "uplift desk", "herman miller",
 ]
 
 # Skip direct competitors: map categories that mean "they already do what we do".
