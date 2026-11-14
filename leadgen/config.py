@@ -72,6 +72,7 @@ SEGMENTS = {
     # --- Commercial channels: networks and buyer events (from owner's research, Nov 2026) ---
     "facility_subcontract": {
         "line": "Commercial",
+        "rotate": False,  # national channel, not a local business: no daily map search
         "weight": 10,
         "maps": "commercial furniture repair company",
         "query": "national commercial furniture repair companies that subcontract local upholstery shops",
@@ -79,6 +80,7 @@ SEGMENTS = {
     },
     "industry_association": {
         "line": "Commercial",
+        "rotate": False,  # national channel, not a local business: no daily map search
         "weight": 8,
         "maps": "restaurant facility management association",
         "query": "restaurant facility management associations with vendor membership",
@@ -86,6 +88,7 @@ SEGMENTS = {
     },
     "buyer_event": {
         "line": "Commercial",
+        "rotate": False,  # national channel, not a local business: no daily map search
         "weight": 7,
         "maps": "restaurant supplier buyer event",
         "query": "hosted buyer events connecting restaurant chains with furniture and FF&E suppliers",
@@ -178,7 +181,7 @@ CHAIN_NAMES = [
     "ikea", "rooms to go", "ashley", "living spaces", "world market", "at home", "lovesac", "la-z-boy",
     "havertys", "goodwill", "kid to kid", "skinspirit", "skin pharm", "la quinta", "marriott", "hilton",
     "uptown cheapskate", "style encore", "2nd street", "blue compass", "two men and a truck", "all my sons",
-    "uplift desk", "herman miller",
+    "uplift desk", "herman miller", "camping world",
 ]
 
 # Skip direct competitors: map categories that mean "they already do what we do".

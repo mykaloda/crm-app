@@ -30,6 +30,8 @@ python3 leadgen/find_leads.py search
 ## 2. Запасной путь (если ScrapeGraph недоступен: нет ключа, сеть, кредиты)
 
 1. `python3 leadgen/find_leads.py plan` — план дня, у каждого пункта есть `segment` и `maps_query`.
+   Каналы (`facility_subcontract`, `industry_association`, `buyer_event`, у них `"rotate": False`) в ежедневный план не попадают:
+   это национальные сети и ассоциации, их на картах не ищут.
 2. Для каждого пункта: Firecrawl `firecrawl_scrape` с `alexandria`
    `{"provider":"firecrawl-maps","capability":"businesses/search","options":{"query":"<maps_query>"}}`
    (можно все пункты одним вызовом, массивом).
@@ -50,8 +52,11 @@ python3 leadgen/find_leads.py search
 
 ## 3a. Почта и черновики писем (без отправки)
 
-1. Для новых лидов с сайтом найти почту, напечатанную на их сайте (главная, футер, страница Contact;
-   Firecrawl `firecrawl_scrape`, `formats: ["links","markdown"]`, `onlyMainContent: false`, ищите `mailto:`).
+1. Для новых лидов с сайтом найти почту, напечатанную на их сайте (главная, футер, страница Contact).
+   Главная: Firecrawl `firecrawl_scrape`, `formats: ["links"]`, `onlyMainContent: false`,
+   `includeTags: ["a[href^='mailto:']", "a[href*='contact' i]"]` — в ответе только `mailto:` и ссылки на Contact (1 кредит, короткий ответ).
+   Если `mailto:` нет — страница Contact: `formats: ["markdown"]`, `onlyMainContent: true`,
+   `excludeTags: ["img","svg","iframe","picture","noscript","gmp-map"]` (видна и почта простым текстом).
    Не угадывать адреса. Почта сети/франшизы (не этой точки) — не использовать, записать в описание.
    Две компании с одним ящиком — письмо только одной.
 2. Записать найденное в `data/leads.csv` (`email`, `contact_name` — только если имя явно указано у адреса).
@@ -60,6 +65,8 @@ python3 leadgen/find_leads.py search
    `zoho_mail_create_draft`, connection `023dfe63-f6a5-84f4-b080-f3cebd8b4a6b`, `accountId` `643277000000008002`,
    `fromAddress` из черновика, `mailFormat: html`, `content` = поле `html` черновика (Verdana 10pt + подпись Zoho «Main»). Статус лида — `Draft in Zoho`, id черновика — в drafts-$DAY.json.
    Отправляет владелец сам из папки «Черновики» Zoho (dillon@lerega.com).
+   Если вызов создания черновика оборвался по таймауту — сначала поиск `/messages/search` с `searchKey` = `to:<домен>`:
+   черновик обычно уже создан; повторять только если его нет (иначе будет дубль).
 
 ## 3b. Ответы на отправленные письма
 

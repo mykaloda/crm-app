@@ -46,7 +46,7 @@ def convert(groups):
             summary = p.get("editorial_summary") or ""
             out.append({
                 "segment": p.get("segment") or seg,
-                "name": p.get("name"),
+                "name": re.split(r"\s+\|\s+", p.get("name") or "")[0].strip(),  # drop "| Round Rock | Facials" tails
                 "website": strip_utm(p.get("website")),
                 "phone": p.get("phone"),
                 "email": "",

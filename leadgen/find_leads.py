@@ -74,7 +74,8 @@ def todays_plan(day: dt.date):
     n = day.toordinal()
     by_line = {}
     for key, seg in config.SEGMENTS.items():
-        by_line.setdefault(seg["line"], []).append(key)
+        if seg.get("rotate", True):
+            by_line.setdefault(seg["line"], []).append(key)
     plan = []
     for i, line in enumerate(config.DAILY_LINES[: config.QUERIES_PER_DAY]):
         segs = by_line[line]
