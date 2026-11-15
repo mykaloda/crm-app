@@ -182,6 +182,7 @@ CHAIN_NAMES = [
     "havertys", "goodwill", "kid to kid", "skinspirit", "skin pharm", "la quinta", "marriott", "hilton",
     "uptown cheapskate", "style encore", "2nd street", "blue compass", "two men and a truck", "all my sons",
     "uplift desk", "herman miller", "camping world",
+    "willie's grill", "david's bridal", "pronovias", "anthropologie", "winnie couture", "hyatt", "autograph collection",
 ]
 
 # Skip direct competitors: map categories that mean "they already do what we do".
