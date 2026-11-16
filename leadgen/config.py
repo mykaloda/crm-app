@@ -183,6 +183,8 @@ CHAIN_NAMES = [
     "uptown cheapskate", "style encore", "2nd street", "blue compass", "two men and a truck", "all my sons",
     "uplift desk", "herman miller", "camping world",
     "willie's grill", "david's bridal", "pronovias", "anthropologie", "winnie couture", "hyatt", "autograph collection",
+    "industrious", "bond collective", "switchyards", "regus", "wework", "homegoods", "relax the back", "ethan allen",
+    "clothes mentor", "plato's closet", "once upon a child", "coach outlet", "michael kors", "kate spade", "homeriver",
 ]
 
 # Skip direct competitors: map categories that mean "they already do what we do".
