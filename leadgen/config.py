@@ -185,6 +185,7 @@ CHAIN_NAMES = [
     "willie's grill", "david's bridal", "pronovias", "anthropologie", "winnie couture", "hyatt", "autograph collection",
     "industrious", "bond collective", "switchyards", "regus", "wework", "homegoods", "relax the back", "ethan allen",
     "clothes mentor", "plato's closet", "once upon a child", "coach outlet", "michael kors", "kate spade", "homeriver",
+    "bellhop", "3 men movers", "undergrads moving", "royal moving", "tide cleaners", "zips cleaners", "comet cleaners",
 ]
 
 # Skip direct competitors: map categories that mean "they already do what we do".
