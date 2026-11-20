@@ -186,7 +186,7 @@ CHAIN_NAMES = [
     "industrious", "bond collective", "switchyards", "regus", "wework", "homegoods", "relax the back", "ethan allen",
     "clothes mentor", "plato's closet", "once upon a child", "coach outlet", "michael kors", "kate spade", "homeriver",
     "bellhop", "3 men movers", "undergrads moving", "royal moving", "tide cleaners", "zips cleaners", "comet cleaners",
-    "kb home", "united built homes", "pacesetter homes", "century 21", "era brokers",
+    "kb home", "united built homes", "pacesetter homes", "century 21", "era brokers", "salon lofts",
 ]
 
 # Skip direct competitors: map categories that mean "they already do what we do".
