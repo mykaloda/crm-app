@@ -186,7 +186,7 @@ CHAIN_NAMES = [
     "industrious", "bond collective", "switchyards", "regus", "wework", "homegoods", "relax the back", "ethan allen",
     "clothes mentor", "plato's closet", "once upon a child", "coach outlet", "michael kors", "kate spade", "homeriver",
     "bellhop", "3 men movers", "undergrads moving", "royal moving", "tide cleaners", "zips cleaners", "comet cleaners",
-    "kb home", "united built homes", "pacesetter homes", "century 21", "era brokers", "salon lofts", "postino", "flower child", "rudy's", "bassett", "wyndham", "avid hotel", "kalahari", "kerbey lane", "7th avenue", "mega furniture", "expansive", "opus virtual", "savers", "readyspaces",
+    "kb home", "united built homes", "pacesetter homes", "century 21", "era brokers", "salon lofts", "postino", "flower child", "rudy's", "bassett", "wyndham", "avid hotel", "kalahari", "kerbey lane", "7th avenue", "mega furniture", "expansive", "opus virtual", "savers", "readyspaces", "little guys", "ron hoover", "square cow", "movertron", "a&bé", "shoreline boat",
 ]
 
 # Skip direct competitors: map categories that mean "they already do what we do".
