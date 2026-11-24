@@ -175,6 +175,33 @@ I'm {me} with {intro}. We make custom seat cushions, banquettes, window seats an
 
 If you have a project coming up where this could fit, I'd be glad to help.""",
     },
+    "str_claims": {
+        "ru": "Страховые для краткосрочной аренды (Airbnb / Vrbo): ремонт мебели после гостей дешевле замены, смета для страхового случая.",
+        "subject": "Furniture repair for rental damage claims",
+        "body": """{greeting}
+
+I'm {me} with {intro}. When a guest damages a sofa, chair or headboard in a short-term rental, we can usually repair it for much less than a replacement: tears, stains, pet damage, cracked or faded leather. Hosts get a written estimate from photos that they can attach to a claim, and we work on site or pick the piece up anywhere around Austin and San Antonio.
+
+If you work with repair vendors on claims in Central Texas, or can point hosts to one, we'd be glad to help. Could you forward this to the right person on your claims team?""",
+    },
+    "warranty_claims": {
+        "ru": "Планы защиты мебели (Montage, Fortegra и т.п.): стать их местным мастером по заявкам.",
+        "subject": "Furniture repair vendor in Austin and San Antonio",
+        "body": """{greeting}
+
+I'm {me} with {intro}. We fix the damage furniture protection plans cover: tears, scratches, stains, cracked or peeling leather, fading, dye transfer and flattened cushions. We repair in the customer's home or pick the piece up, anywhere around Austin and San Antonio. In 11+ years we've restored 5,200+ pieces.
+
+If you send furniture claims to local technicians in this area, we'd like to be one of them. Could you forward this to whoever manages your service network?""",
+    },
+    "claims_network": {
+        "ru": "Сети подрядчиков по страховым случаям (itel, Sedgwick и т.п.): вступить как мастерская по мебели.",
+        "subject": "Furniture repair for claims in Central Texas",
+        "body": """{greeting}
+
+I'm {me} with {intro}. We repair upholstered and leather furniture damaged in property claims: sofas, recliners, chairs and headboards with tears, stains, cracked or faded leather or flattened cushions, and we reupholster pieces that can't be restored. We work on site or in our shop, anywhere around Austin and San Antonio. In 11+ years we've restored 5,200+ pieces.
+
+If you send furniture repair work to local vendors in Central Texas, we'd like to join your network. Who would be the right person to talk to about that?""",
+    },
     "luxury_resale": {
         "ru": "Перепродажа люксовых сумок: восстановление перед продажей, цена за сумку.",
         "subject": "Handbag restoration",

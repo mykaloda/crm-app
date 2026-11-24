@@ -130,6 +130,31 @@ SEGMENTS = {
         "query": "home builders, remodeling contractors and custom cabinet / millwork shops",
         "pitch": "Подушки, банкетки и встроенные диваны на заказ для их проектов.",
     },
+    # --- Furniture repair: insurance and protection-plan claims (owner's request, Nov 24 2026) ---
+    "str_claims": {
+        "line": "Furniture",
+        "rotate": False,  # national channel, not a local business: no daily map search
+        "weight": 8,
+        "maps": "short-term rental insurance",
+        "query": "short-term rental (Airbnb / Vrbo) insurers and guest damage protection companies",
+        "pitch": "Ремонт мебели после гостей дешевле замены; письменная смета по фото для страхового случая хозяина. Просим переслать в отдел претензий.",
+    },
+    "warranty_claims": {
+        "line": "Furniture",
+        "rotate": False,  # national channel, not a local business: no daily map search
+        "weight": 9,
+        "maps": "furniture protection plan company",
+        "query": "furniture protection plan administrators that dispatch local repair technicians",
+        "pitch": "Стать их местным мастером по заявкам планов защиты мебели в Austin / San Antonio.",
+    },
+    "claims_network": {
+        "line": "Furniture",
+        "rotate": False,  # national channel, not a local business: no daily map search
+        "weight": 8,
+        "maps": "insurance claims contractor network",
+        "query": "insurance claims repair networks (managed repair, contents) that take furniture repair vendors",
+        "pitch": "Вступить в их сеть подрядчиков как мастерская по мягкой и кожаной мебели для страховых случаев в Central Texas.",
+    },
     # --- Handbag repair: referral partners ---
     "luxury_resale": {
         "line": "Handbags",
