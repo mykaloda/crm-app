@@ -103,6 +103,51 @@ I'm {me} with {intro}. We repair torn, cracked and faded seats and interior leat
 
 Would you be open to a quick call this week?""",
     },
+    "aviation_mro": {
+        "ru": "Обслуживание самолётов, производители кресел и чехлов: подряд под их сертификатом FAA.",
+        "subject": "Overflow sewing and leather repair for your seat shop",
+        "body": """{greeting}
+
+I'm {me} with {intro}, near Austin. We repair, recolor and reupholster leather and vinyl seats, including aircraft seats around Austin.
+
+We'd like to work as an overflow subcontractor for your seat or cabin shop: sewing dress covers to your patterns with your approved, burn-certified materials, and repairing or re-dyeing leather, under your repair station's quality system and inspection. Who would be the right person to talk to about that?""",
+    },
+    "airline": {
+        "ru": "Авиакомпании: мебель лаунжей и комнат экипажей в Остине, косметический ремонт кожи кресел по их программе ТО.",
+        "subject": "Seat leather and lounge furniture repair in Austin",
+        "body": """{greeting}
+
+I'm {me} with {intro}, near Austin. We repair, recolor and reupholster leather and vinyl seating, including aircraft seats, and we work on site.
+
+We'd like to help your team in Austin: repairing lounge, crew room and office furniture, and cosmetic leather repair on cabin seats under your maintenance program, with materials your engineering approves. Could you point me to the right person in Tech Ops or facilities purchasing?""",
+    },
+    "government_facility": {
+        "ru": "Суды и административные здания: ремонт и перетяжка кресел в залах суда, приёмных и кабинетах на месте.",
+        "subject": "Furniture repair for courtrooms and offices",
+        "body": """{greeting}
+
+I'm {me} with {intro}. We repair and reupholster seating in public buildings: courtroom, jury and gallery chairs, council chamber and office chairs, lobby benches. We fix torn vinyl and leather, worn and faded finishes and flattened cushions, and reupholster pieces that can't be saved. Most repairs are done on site, so the furniture doesn't leave the building.
+
+We'd like to be considered for this kind of work. Who would be the right person to talk to?""",
+    },
+    "medical_facility": {
+        "ru": "Больницы и клиники: перетяжка смотровых столов, каталок и процедурных кресел на месте.",
+        "subject": "Exam table and treatment chair reupholstery",
+        "body": """{greeting}
+
+I'm {me} with {intro}. We re-cover torn and cracked exam tables, stretcher pads, and treatment and infusion chairs on site, in medical-grade vinyl that stands up to bleach and hospital disinfectants. Torn vinyl can't be properly disinfected and gets flagged on inspections, and re-covering a top usually costs much less than buying a new one from the manufacturer.
+
+If you send me a photo of one that needs it, I'll tell you what it would cost.""",
+    },
+    "public_safety_fleet": {
+        "ru": "Полиция, пожарные, скорые: ремонт и перетяжка сидений служебных машин.",
+        "subject": "Seat repair for patrol cars and emergency vehicles",
+        "body": """{greeting}
+
+I'm {me} with {intro}. We repair and reupholster seats in patrol cars, fire trucks and ambulances: driver seats worn through by duty belts, torn bench seats and captain's chairs, flattened foam. We recently rebuilt a police vehicle seat in Round Rock in heavy top-grain leather and reshaped the right bolster so the duty belt doesn't wear it out.
+
+Most seats can be repaired for much less than a new seat or cover, and we can come to your shop so the vehicle stays in service. Who handles seat repairs for your fleet?""",
+    },
     "facility_subcontract": {
         "ru": "Сети коммерческого ремонта мебели: предложение быть местным субподрядчиком.",
         "subject": "Upholstery subcontractor in Austin",

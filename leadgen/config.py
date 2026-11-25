@@ -69,6 +69,46 @@ SEGMENTS = {
         "query": "car dealerships, RV dealers, boat dealers, marinas and limo / van rental companies",
         "pitch": "Ремонт кожи сидений и салона для б/у машин, лодок, RV и автопарков (Archer Van Rentals уже клиент).",
     },
+    "aviation_mro": {
+        "line": "Commercial",
+        "rotate": False,  # FAA-certificated seat/cabin shops: subcontract channel from research
+        "weight": 8,
+        "maps": "aircraft seat repair station",
+        "query": "aircraft MROs, seat makers and seat-cover shops with FAA repair stations that could subcontract sewing and leather repair",
+        "pitch": "Подряд под их сертификатом FAA (14 CFR 145.217): шьём чехлы по их лекалам и сертифицированным материалам, ремонт и перекраска кожи.",
+    },
+    "airline": {
+        "line": "Commercial",
+        "rotate": False,  # airlines: supplier portals, no daily map search
+        "weight": 6,
+        "maps": "airline",
+        "query": "airlines with bases, Tech Ops or lounges at AUS and SAT",
+        "pitch": "Мебель лаунжей и комнат экипажей в Остине (без допуска FAA); косметический ремонт кожи кресел по их программе ТО. Вход через портал поставщиков.",
+    },
+    "government_facility": {
+        "line": "Commercial",
+        "rotate": False,  # courts and government buildings: procurement channels from research
+        "weight": 8,
+        "maps": "courthouse government office",
+        "query": "courthouses, city halls, county and state office buildings and their facilities / purchasing departments",
+        "pitch": "Ремонт и перетяжка кресел в залах суда, присяжных, приёмных и кабинетах на месте; регистрация поставщиком (CMBL, NIGP 931-44, 931-46, 96290).",
+    },
+    "medical_facility": {
+        "line": "Commercial",
+        "rotate": False,  # hospitals and clinic networks from research; can be turned on for map search later
+        "weight": 8,
+        "maps": "chiropractor physical therapy clinic",
+        "query": "hospitals, clinic networks, infusion, dialysis and plasma centers, chiropractic and physical therapy clinics with vinyl exam tables and treatment chairs",
+        "pitch": "Перетяжка смотровых столов, матрасов каталок, процедурных и инфузионных кресел на месте, в медицинский винил под хлорку; дешевле новой столешницы от производителя.",
+    },
+    "public_safety_fleet": {
+        "line": "Commercial",
+        "rotate": False,  # government fleets: contacts come from research, no daily map search
+        "weight": 9,
+        "maps": "police department fire station",
+        "query": "police, fire and EMS fleets (city, county, ESD) and emergency vehicle service centers",
+        "pitch": "Ремонт и перетяжка сидений патрульных машин, пожарных и скорых (водительское сиденье рвёт ремень с оружием); зарегистрироваться поставщиком (NIGP 92891, 96290).",
+    },
     # --- Commercial channels: networks and buyer events (from owner's research, Nov 2026) ---
     "facility_subcontract": {
         "line": "Commercial",
