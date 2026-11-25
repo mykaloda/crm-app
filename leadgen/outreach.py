@@ -182,7 +182,7 @@ I'm interested in RestaurantPoint. Could you send me pricing for a supplier pack
 
 I'm {me} with {intro}. A lot of clients have pieces they want to keep but refresh, and we'd be happy to be the workroom you send them to: reupholstery, leather repair and restoration. We offer designers trade pricing and a referral fee.
 
-Would it help if I sent you a few before-and-after photos of our work?""",
+If you have a piece in mind for a current project, send me a photo and I'll tell you what we can do.""",
     },
     "furniture_store": {
         "ru": "Мебельные магазины: повреждения при доставке и гарантия — ремонт дешевле замены.",
@@ -292,6 +292,108 @@ FOLLOW_UP = {
 Just following up on my note below. If it's easier, reply with a photo and I'll send a price, no commitment.""",
 }
 
+# ---------------------------------------------------------------- photos (owner's request, Nov 25 2026)
+# One or two real Lerega projects per segment, from the lerega.com gallery (Lerega_Client get_work_examples).
+# Every gallery image is a before/after collage (damaged on the left, restored on the right).
+# Images go through lerega.com's own resizer, so they load from our domain at a light size.
+# Use only photos from the gallery: never stock or web images.
+BLOB = "https://7r6rbm1lcx60cyl2.public.blob.vercel-storage.com/"
+PAGES = {
+    "commercial": "https://lerega.com/commercial-upholstery?Email",
+    "furniture": "https://lerega.com/leather-furniture-repair-in-austin?Email",
+    "vehicles": "https://lerega.com/auto-upholstery-in-austin?Email",
+    "handbags": "https://lerega.com/leather-handbag-repair?Email",
+}
+PHOTOS = {  # key: (project title as on lerega.com, image path under BLOB, page)
+    "restaurant_booth": ("Restaurant booth: seat reupholstery and color restoration, Lakeway",
+                         "cms/projects/dfef1ac1-0f1a-4e49-9fd5-0d094bb7ed24/e70a48c1-8b96-436e-94b6-014d8f8e83ff-23-1-uvqf9SqD7St6S30ePCdI9HRZStekC4.jpg", "commercial"),
+    "club_booth": ("Club booth: seat cushion reupholstery",
+                   "cms/projects/a97c0a49-210c-4f3d-b7d7-97f7103ce4c9/e70a48c1-8b96-436e-94b6-014d8f8e83ff-24-1-j4ZpVoEKXArempLpe8uuGDXXlErXeh.jpg", "commercial"),
+    "waiting_area": ("Waiting area seat cushions: reupholstery",
+                     "cms/projects/53203810-3a57-42f0-acf9-5e0f175567da/e70a48c1-8b96-436e-94b6-014d8f8e83ff-25-1-QEstJIX7nrOYuUNXXbZt3WecVWBTwg.jpg", "commercial"),
+    "hotel_recliner": ("Hotel lobby recliner: vinyl panel replacement, Round Rock",
+                       "projects/1780537208807-8n1w2q.webp", "commercial"),
+    "office_cushion": ("Office leather cushion restoration",
+                       "projects/1792704872216-eyk1d8.webp", "commercial"),
+    "pool_lounge": ("Apartment complex pool lounge chairs: new covers, Austin",
+                    "projects/1784165461947-8bgrec.webp", "commercial"),
+    "massage_chair": ("Salon massage chair footrest: reupholstery in marine vinyl, Austin",
+                      "projects/1779940807557-h1s6fe.webp", "commercial"),
+    "armchair_color": ("Leather armchair: surface and color restoration, Cedar Park",
+                       "cms/projects/8dcfca34-11e4-4203-ba7c-4c9ba7e7c23c/1774642903095-fzahcm-i5LPqV0Ijmb1XxtZLILCzs87oLXSV4.jpg", "furniture"),
+    "armchair_water": ("Leather armchair: water damage and color restoration, Cedar Park",
+                       "cms/projects/e4ef0723-0399-44e0-8cab-a1cc92ea8bf3/e70a48c1-8b96-436e-94b6-014d8f8e83ff-11-1-RMXqpLjj9Txo1xzMymwKKTl5M8M99x.jpg", "furniture"),
+    "sofa_sun_fade": ("Leather sofa: sun fade and color restoration, Austin",
+                      "cms/projects/7763c816-5cfe-4f0f-af51-2ef48e654d63/e70a48c1-8b96-436e-94b6-014d8f8e83ff-20-1-DAtDfTuwIi0wkOJmcJqYvjtl1X2gEk.jpg", "furniture"),
+    "sofa_frame": ("Leather sofa: frame repair, cushion reshaping and color restoration, Pflugerville",
+                   "cms/projects/4b2a3814-ecb1-46f0-b830-6964220e550a/e70a48c1-8b96-436e-94b6-014d8f8e83ff-26-1-Ji8yAEaqypGz6blKtpgJSpmLVKFjWP.jpg", "furniture"),
+    "sofa_reupholstery": ("Sofa: full reupholstery in the client's fabric, Austin",
+                          "cms/projects/8ee0c5e4-c4c5-430b-848f-37368bbc98fd/1774643491269-riwyy0-bnKQllAA3z9NWy2OzLcAtSRFywZggH.png", "furniture"),
+    "recliner_cushion": ("Leather recliner cushion: surface restoration",
+                         "cms/projects/0a88b573-4dcc-4b19-ba55-3fbc0f445f8b/1774642846371-lnl2zf-Pnzzwn0A2V5wqPvDhf0i1dgkYMKXin.jpg", "furniture"),
+    "fabric_tear": ("Fabric seam and tear repair",
+                    "cms/projects/6ec152f8-12aa-4d05-8eed-e049540b6294/1774644512694-b2kbvd-cRo9u8b6EqoSwiGhY1kYyWlurd1lb4.jpg", "commercial"),
+    "vintage_chair": ("Vintage dining chair: full reupholstery and restoration, Steiner Ranch",
+                      "projects/1787267155300-3x5lgc.webp", "furniture"),
+    "custom_back_cushion": ("Custom back cushion panel: fabrication and upholstery",
+                            "cms/projects/ed7e4f05-f5c0-439f-ac4c-ded56ae3f563/1774643920035-a5yjl5-6Dp4yugjlp3yoOWq18qurP0gsiUcCF.jpg", "commercial"),
+    "custom_marine": ("Custom upholstery built from scratch in marine vinyl",
+                      "cms/projects/034599ae-2e70-4d5b-817a-1e61f72f087d/e70a48c1-8b96-436e-94b6-014d8f8e83ff-9-1-LvNIxN1OqvXU6UduCTExWTWiAQwthC.jpg", "commercial"),
+    "car_seat": ("Car seat: vinyl panel replacement and restoration, Austin",
+                 "cms/projects/ace3a908-f52a-47ef-8989-5f0af0fcfe30/1774644293130-544j2y-nS67F544LHGIF0WzkpXvMKfs5zdvYg.PNG", "vehicles"),
+    "boat_seat": ("Boat seat: marine vinyl repair and partial reupholstery, Lakeway",
+                  "cms/projects/cbcca20c-63df-46b7-9714-4ef74f85834d/e70a48c1-8b96-436e-94b6-014d8f8e83ff-22-1-KwG2n8MZCRG2LqBquBMAtUiCv4QcYV.jpg", "vehicles"),
+    "police_seat": ("Police vehicle seat: rebuilt in top-grain leather, bolster reshaped for the duty belt, Round Rock",
+                    "projects/1789084163374-mjv72c.webp", "vehicles"),
+    "aircraft_reupholstery": ("Aircraft seat: cushion reupholstery, Lakeway",
+                              "cms/projects/a0f3614d-696b-4787-888a-410a4500ff8f/e70a48c1-8b96-436e-94b6-014d8f8e83ff-2-1-xkqVwQjqtfrFYOh3ZxYkpcl4YfSzPb.jpg", "vehicles"),
+    "aircraft_vinyl": ("Aircraft seat: vinyl restoration with protective top coat, Georgetown",
+                       "cms/projects/fc17e7ec-b79c-47a4-88b5-f63e9cf34834/e70a48c1-8b96-436e-94b6-014d8f8e83ff-5-1-HukBOzNTlzZioUuWkFdNzN3308csDo.jpg", "vehicles"),
+    "handbag_designer": ("Designer handbag: full restoration and cleaning, West Lake Hills",
+                         "cms/projects/dbf9efd1-4add-45be-a08d-a3650f720f4a/e70a48c1-8b96-436e-94b6-014d8f8e83ff-10-1-rYuTy1rjz2dS2OxAMPr3b1AyBMLta4.jpg", "handbags"),
+    "handbag_color": ("Leather handbag: edge, surface and color restoration, Lakeway",
+                      "cms/projects/40d86584-6521-4d7b-9134-0700458714f7/e70a48c1-8b96-436e-94b6-014d8f8e83ff-16-1-ONJWMK7jw5vecC1DPF8zj5PAvnE1Lz.jpg", "handbags"),
+}
+SEGMENT_PHOTOS = {  # segment: photo keys (1-2), closest to what the email offers
+    "restaurant_bar": ["restaurant_booth", "club_booth"],
+    "hotel_venue": ["hotel_recliner", "waiting_area"],
+    "office_coworking": ["office_cushion", "armchair_color"],
+    "property_manager": ["pool_lounge", "sofa_sun_fade"],
+    "medical_salon": ["massage_chair", "waiting_area"],
+    "vehicle_marine": ["car_seat", "boat_seat"],
+    "facility_subcontract": ["restaurant_booth", "club_booth"],
+    "industry_association": ["restaurant_booth", "club_booth"],
+    "buyer_event": ["restaurant_booth", "club_booth"],
+    "public_safety_fleet": ["police_seat", "car_seat"],
+    "medical_facility": ["waiting_area", "massage_chair"],
+    "government_facility": ["waiting_area", "armchair_water"],
+    "aviation_mro": ["aircraft_reupholstery", "aircraft_vinyl"],
+    "airline": ["aircraft_reupholstery", "aircraft_vinyl"],
+    "interior_designer": ["sofa_reupholstery", "sofa_sun_fade"],
+    "furniture_store": ["sofa_frame", "recliner_cushion"],
+    "antique_consignment": ["vintage_chair", "armchair_water"],
+    "moving_company": ["fabric_tear", "sofa_frame"],
+    "builder_remodeler": ["custom_back_cushion", "custom_marine"],
+    "str_claims": ["fabric_tear", "armchair_water"],
+    "warranty_claims": ["recliner_cushion", "sofa_frame"],
+    "claims_network": ["armchair_water", "fabric_tear"],
+    "luxury_resale": ["handbag_designer", "handbag_color"],
+    "shoe_repair_tailor": ["handbag_designer", "handbag_color"],
+    "dry_cleaner": ["handbag_designer", "handbag_color"],
+    "boutique_bridal": ["handbag_designer", "handbag_color"],
+}
+PHOTO_INTRO = {1: "Here's one of our recent projects:", 2: "Here are a couple of our recent projects:"}
+PHOTO_WIDTH = 260  # px on screen; the file is 640 px wide, sharp on phones and retina screens
+
+
+def photo_url(path):
+    from urllib.parse import quote
+    return "https://lerega.com/_next/image?url=" + quote(BLOB + path, safe="") + "&w=640&q=75"
+
+
+def photos_for(segment):
+    return [PHOTOS[k] for k in SEGMENT_PHOTOS.get(segment or "", [])]
+
 
 # ---------------------------------------------------------------- build
 def clean_business(name):
@@ -301,7 +403,8 @@ def clean_business(name):
     return name.strip()
 
 
-def render(segment, business, contact_name=""):
+def render_message(segment, business, contact_name=""):
+    """Subject and letter text: greeting, paragraphs and the ask. No photos, no signature."""
     t = TEMPLATES[segment]
     business = clean_business(business)
     team = business[4:] if business.startswith("The ") else business
@@ -310,8 +413,23 @@ def render(segment, business, contact_name=""):
     import config
     intro = INTRO[config.SEGMENTS[segment]["line"]]
     fill = dict(business=business, greeting=greeting, me=SENDER["name"], intro=intro, proof=PROOF)
-    subject = t["subject"].format(**fill)
-    body = t["body"].format(**fill)
+    return t["subject"].format(**fill), t["body"].format(**fill)
+
+
+def photo_position(paragraphs):
+    # Photos go right before the last paragraph (the ask), so the question stays the last line above the signature.
+    return len(paragraphs) - 1 if len(paragraphs) >= 3 else len(paragraphs)
+
+
+def render(segment, business, contact_name=""):
+    """Plain-text version for review files and the daily sheet (the email itself is sent as HTML)."""
+    subject, body = render_message(segment, business, contact_name)
+    items = photos_for(segment)
+    if items:
+        paras = body.split("\n\n")
+        lines = PHOTO_INTRO[len(items)] + "\n" + "\n".join(f"- {title} (photo)" for title, _, _ in items)
+        paras.insert(photo_position(paras), lines)
+        body = "\n\n".join(paras)
     body += "\n\n" + SIGNATURE.format(**SENDER)
     return subject, body
 
@@ -332,14 +450,35 @@ FOOTER = (
 )
 
 
-def render_html(segment, business, contact_name=""):
+def photo_block_html(segment):
     import html
-    subject, text = render(segment, business, contact_name)
-    message = text.split("\n\n" + SIGNATURE.split("\n")[0].format(**SENDER) + "\n")[0]  # body without text signature
-    paras = "".join(f"<div>{html.escape(p, quote=False).replace(chr(10), '<br>')}<br></div><div><br></div>" for p in message.split("\n\n"))
+    items = photos_for(segment)
+    if not items:
+        return ""
+    imgs = " ".join(
+        f'<a href="{PAGES[page]}" target="_blank"><img src="{html.escape(photo_url(path))}" alt="{html.escape(title)}" '
+        f'title="{html.escape(title)}" width="{PHOTO_WIDTH}" style="border: 0; max-width: 100%; height: auto"></a>'
+        for title, path, page in items)
+    return f"<div>{PHOTO_INTRO[len(items)]}<br></div><div>{imgs}<br></div><div><br></div>"
+
+
+def html_from_text(message, segment=None):
+    """Letter text (paragraphs split by blank lines, no signature) -> Zoho HTML with photos and the signature.
+    Also used for hand-written special drafts, so they look the same."""
+    import html
+    paras = message.split("\n\n")
+    blocks = [f"<div>{html.escape(p, quote=False).replace(chr(10), '<br>')}<br></div><div><br></div>" for p in paras]
+    photos = photo_block_html(segment)
+    if photos:
+        blocks.insert(photo_position(paras), photos)
     signature = (Path(__file__).with_name("signature.html")).read_text(encoding="utf-8").strip()
-    body = f'<div><div style="{FONT}">{paras}{signature}</div></div>'
-    return subject, body
+    # The owner asked for one more empty line between the letter and the signature.
+    return f'<div><div style="{FONT}">{"".join(blocks)}<div><br></div>{signature}</div></div>'
+
+
+def render_html(segment, business, contact_name=""):
+    subject, message = render_message(segment, business, contact_name)
+    return subject, html_from_text(message, segment)
 
 
 def sent_emails():

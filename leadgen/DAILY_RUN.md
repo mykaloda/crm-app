@@ -64,6 +64,9 @@ python3 leadgen/find_leads.py search
 4. **Ничего не отправлять.** Каждое письмо положить черновиком в Zoho Mail через Zapier:
    `zoho_mail_create_draft`, connection `023dfe63-f6a5-84f4-b080-f3cebd8b4a6b`, `accountId` `643277000000008002`,
    `fromAddress` из черновика, `mailFormat: html`, `content` = поле `html` черновика (Verdana 10pt + подпись Zoho «Main»). Статус лида — `Draft in Zoho`, id черновика — в drafts-$DAY.json.
+   В `html` уже есть 1–2 фото «до/после» по теме сегмента (`SEGMENT_PHOTOS` в `outreach.py`, только проекты из галереи lerega.com)
+   и лишняя пустая строка перед подписью — так просил владелец. Для писем, написанных вручную, HTML собирать через
+   `outreach.html_from_text(текст, сегмент)`, чтобы вид был тот же.
    Отправляет владелец сам из папки «Черновики» Zoho (dillon@lerega.com).
    Если вызов создания черновика оборвался по таймауту — сначала поиск `/messages/search` с `searchKey` = `to:<домен>`:
    черновик обычно уже создан; повторять только если его нет (иначе будет дубль).
